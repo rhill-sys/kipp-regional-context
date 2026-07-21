@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KIPP Regions vs. Their Districts and States</title>
+<style>
+  .viz-root, :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb; --page: #f9f9f7;
+    --ink-1: #0b0b0b; --ink-2: #52514e; --ink-3: #898781;
+    --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --s1: #2a78d6; /* Newark */
+    --s2: #eb6834; /* NYC */
+    --s3: #1baf7a; /* Camden */
+    --s5: #e87ba4; /* Miami */
+    --neutral: #9b9992; --good-text: #006300;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --page: #0d0d0d;
+      --ink-1: #ffffff; --ink-2: #c3c2b7; --ink-3: #898781;
+      --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s5: #d55181;
+      --neutral: #6f6e68; --good-text: #0ca30c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink-1);
+         font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.5; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 20px 80px; }
+  header.hero { padding: 36px 0 8px; }
+  header.hero h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  header.hero p.sub { color: var(--ink-2); font-size: 15px; max-width: 76ch; margin: 0; }
+  .badge { display:inline-block; font-size: 11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+           color: var(--ink-3); border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; margin-bottom: 10px;}
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
+          padding: 20px 22px; margin-top: 18px; }
+  .card h3 { margin: 0 0 2px; font-size: 16.5px; }
+  .card p.note { color: var(--ink-3); font-size: 12.5px; margin: 2px 0 10px; }
+  .duo { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px){ .duo { grid-template-columns: 1fr; } }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin: 10px 0 2px; }
+  .chip { font-size: 12.5px; border: 1px solid var(--border); border-radius: 999px; padding: 3px 12px; color: var(--ink-2); }
+  .chip b { color: var(--ink-1); }
+  .chip.pos b { color: var(--good-text); }
+  svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .legend { display:flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--ink-2); margin: 4px 0 8px; }
+  .legend .it { display:flex; align-items:center; gap:6px; }
+  .sw { width: 10px; height: 10px; border-radius: 3px; display:inline-block; }
+  .swd { width: 16px; height: 0; border-top: 2px dashed var(--neutral); display:inline-block; }
+  .swl { width: 16px; height: 0; border-top: 2px solid var(--neutral); display:inline-block; }
+  details.tbl { margin-top: 8px; font-size: 13px; }
+  details.tbl summary { cursor: pointer; color: var(--ink-3); font-size: 12.5px; }
+  details.tbl table { border-collapse: collapse; margin-top: 8px; width: 100%; }
+  details.tbl th, details.tbl td { text-align: left; padding: 4px 10px 4px 0; border-bottom: 1px solid var(--grid);
+      font-variant-numeric: tabular-nums; font-size: 12.5px; }
+  details.tbl th { color: var(--ink-3); font-weight: 600; }
+  .tooltip { position: fixed; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border);
+             border-radius: 8px; padding: 6px 10px; font-size: 12.5px; color: var(--ink-1);
+             box-shadow: 0 4px 14px rgba(0,0,0,.12); opacity: 0; transition: opacity .12s; z-index: 50; max-width: 280px;}
+  .foot { margin-top: 48px; border-top: 1px solid var(--grid); padding-top: 16px; font-size: 12.5px; color: var(--ink-3); line-height: 1.7; }
+</style>
+</head>
+<body class="viz-root">
+<div class="wrap">
+
+<header class="hero">
+  <div class="badge">Each region vs. its own district and state · through the most recent available year</div>
+  <h1>How Far Above Their Districts: KIPP Regions in Local Context</h1>
+  <p class="sub">This is not a KIPP-vs-KIPP comparison. Each panel shows one KIPP region against the two lines that
+  share its test, its city, and its students: the local district average and the statewide average. The question in
+  every panel is the same — how far above (or how fast toward) its own context is this region, and for how long?
+  Grades 3-8 proficiency throughout; each region on its own state's test.</p>
+</header>
+
+<div class="card" id="summarycard">
+  <h3>Improvement scoreboard — how much each region gained, and how much faster than its own context</h3>
+  <p class="note">Windows: pre-pandemic = first tested year → 2019; post-pandemic = 2022 → 2025 (Miami: 2021 → 2026, its full tested history — no pre-pandemic state testing in the dataset; Camden pre-window starts 2016, partial administration). "Net vs district / state" = KIPP's gain minus the district's / state's gain over the same window — the measure that nets out test changes, since recalibrations move all lines in a state together. †KIPP NYC's post-window math uses 2023→2025 because its 2022 math point is unusable (KIPP Infinity suppressed in the state file).</p>
+  <div id="c_improve"></div>
+  <div id="c_improve_state" style="margin-top:14px;"></div>
+  <details class="tbl" open><summary>Full table (point gains per window)</summary><div id="t_improve"></div></details>
+</div>
+
+<div id="panels"></div>
+
+<div class="card" id="naepadj">
+  <h3>The NAEP adjustment: what would New York score on a PARCC-rigor test?</h3>
+  <p class="note">Two independent methods, same logic: find what New York's reported proficiency would look like if its
+  bar were as high as New Jersey's. <b>Method A — the NAEP twin.</b> Among PARCC-legacy states, Maryland is New York's
+  statistical twin on NAEP 2024 (within ~1–3 scale points in all four grade/subject cells; composite 244.1 vs 244.2) —
+  and Maryland, on its PARCC-successor MCAP, reports <b>50.8% ELA and 26.5% math</b> (2025). Illinois (NAEP slightly
+  above NY) reported <b>~41% ELA / 28.4% math</b> on its PARCC-derived IAR under its pre-2025 cuts — cuts ISBE then
+  lowered precisely because they were among the nation's hardest. <b>Method B — the NAEP-Proficient share.</b> New
+  Jersey's grade-4 math cut maps exactly at NAEP Proficient (249), and NJ's reported rate (45%) matches its NAEP-Proficient
+  share (43.9%) almost perfectly — validating the method. New York's share of students at/above NAEP Proficient in G4 math
+  is <b>36.6%</b>, against a reported G4 state-test rate of <b>58%</b>.</p>
+  <div id="c_adj"></div>
+  <details class="tbl"><summary>Working table and caveats</summary><div id="t_adj"></div></details>
+</div>
+
+<div class="foot">
+  <strong>Sources.</strong> Newark &amp; Camden: NJ DOE statewide assessment files (PARCC/NJSLA, grades 3-8, % Level 4+5),
+  2015–2025; TEAM Academy = KIPP Newark; KIPP Cooper Norcross = KIPP Camden (2016 partial: grades 5-8); Newark 2026
+  figures internal — state files not yet public. NYC: NYSED researcher files / NYC InfoHub (grades 3-8, L3+4; KIPP NYC
+  student-weighted across schools; NYSED declared results non-comparable across the 2016, 2018, and 2023 test changes;
+  KIPP NYC 2022 math understated — KIPP Infinity suppressed in the state file). Miami: FLDOE results files 2021–2026
+  (FSA through 2022, FAST PM3 from 2023; KIPP Miami all-grades aggregate; Miami-Dade district = enrollment-weighted
+  grades 3-8 average of FLDOE per-grade district files, validated by reproducing the statewide series; Dade 2026 ELA is
+  the grades 3-10 figure from FLDOE's district comparison file as reported by WLRN/M-DCPS — grades 3-8 and 3-10 differed
+  by ≤0.5 pt in 2025). Levels are not comparable across states — NJ's proficiency bar maps to NAEP Proficient (hardest
+  in the U.S.), NY's and FL's map lower — which is why each panel compares only within its own state.
+</div>
+
+</div>
+<div class="tooltip" id="tt"></div>
+<script>
+const NS="http://www.w3.org/2000/svg";
+function el(t,a,parent){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(parent)parent.appendChild(e);return e;}
+const tt=document.getElementById('tt');
+function hover(node,html){node.style.cursor="default";
+ node.addEventListener('mousemove',ev=>{tt.innerHTML=html;tt.style.opacity=1;tt.style.left=(ev.clientX+14)+'px';tt.style.top=(ev.clientY-10)+'px';});
+ node.addEventListener('mouseleave',()=>tt.style.opacity=0);}
+
+const IMPROVE=[
+ // [label, color, ELA:{kipp,dist,state}, MATH:{kipp,dist,state}, footnote]
+ {label:'KIPP NYC — pre-pandemic (2015→19)', col:'var(--s2)',
+  ela:{k:30.9,d:16.7,s:14.1}, math:{k:25.8,d:10.0,s:8.6}},
+ {label:'KIPP NYC — post-pandemic (2022→25)', col:'var(--s2)',
+  ela:{k:15.1,d:7.3,s:6.6}, math:{k:2.2,d:7.0,s:3.1}, fn:'†'},
+ {label:'KIPP Newark — pre-pandemic (2015→19)', col:'var(--s1)',
+  ela:{k:20.2,d:13.8,s:8.3}, math:{k:15.8,d:8.4,s:6.1}},
+ {label:'KIPP Newark — post-pandemic (2022→25)', col:'var(--s1)',
+  ela:{k:10.2,d:7.2,s:4.7}, math:{k:16.5,d:8.1,s:6.5}},
+ {label:'KIPP Camden — pre-pandemic (2016→19)', col:'var(--s3)',
+  ela:{k:9.5,d:4.1,s:4.9}, math:{k:10.1,d:2.1,s:1.8}},
+ {label:'KIPP Camden — post-pandemic (2022→25)', col:'var(--s3)',
+  ela:{k:13.6,d:4.7,s:4.7}, math:{k:16.3,d:6.1,s:6.5}},
+ {label:'KIPP Miami — full history (2021→26)', col:'var(--s5)',
+  ela:{k:31.6,d:10.4,s:8.8}, math:{k:37.7,d:22.2,s:14.4}}
+];
+
+const REGIONS=[
+ {id:'newark', name:'KIPP Newark (TEAM)', col:'var(--s1)', dom:[2015,2026],
+  district:'Newark Public Schools', state:'New Jersey',
+  note:'The NJSLA/PARCC scale is unchanged across this window — no recalibrations — and NJ’s proficiency bar is the hardest in the country (grade-4 math cut = NAEP Proficient). 2026 KIPP figures are internal (open markers); district/state 2026 not yet published.',
+  chips:['<b>Above the district in every tested year since 2015</b>','ELA 2025: <b>+10.9 pp</b> over district','Math 2025: <b>+13.3 pp</b> over district','2026 (internal): <b>50 ELA / 43 math</b> — all-time highs, closing on the NJ state average'],
+  ela:{kipp:{2015:31.4,2016:39.9,2017:46.6,2018:54.4,2019:51.6,2022:34.4,2023:38.8,2024:38.5,2025:44.6,2026:50},
+       dist:{2015:22.2,2016:28.9,2017:32.5,2018:34.8,2019:36.0,2022:26.5,2023:28.2,2024:30.3,2025:33.7},
+       state:{2015:49.6,2016:53.0,2017:56.1,2018:57.8,2019:57.9,2022:48.9,2023:51.2,2024:51.2,2025:53.6}},
+  math:{kipp:{2015:20.8,2016:30.1,2017:43.1,2018:45.7,2019:36.6,2022:17.6,2023:20.7,2024:30.3,2025:34.1,2026:43},
+       dist:{2015:18.8,2016:21.6,2017:26.1,2018:26.0,2019:27.2,2022:12.7,2023:15.1,2024:17.4,2025:20.8},
+       state:{2015:39.0,2016:43.3,2017:43.8,2018:45.4,2019:45.1,2022:34.5,2023:37.0,2024:38.6,2025:41.0}},
+  internal:{ela:[2026],math:[2026]}},
+ {id:'camden', name:'KIPP Camden (KCNA)', col:'var(--s3)', dom:[2015,2026],
+  district:'Camden City School District', state:'New Jersey',
+  note:'Same unchanged NJ scale. KCNA’s first full administration was 2017 (2016 covered grades 5-8 only). Camden is one of the poorest cities in the United States.',
+  chips:['ELA 2025: <b>28.7% vs district 14.4%</b> — 2.0×','Math 2025: <b>26.2% vs district 10.2%</b> — 2.6×','Math gap over district: <b>+2.7 pp (2022) → +16.0 pp (2025)</b>'],
+  ela:{kipp:{2016:21.3,2017:29.2,2018:32.8,2019:30.8,2022:15.1,2023:18.9,2024:22.3,2025:28.7},
+       dist:{2015:6.2,2016:10.8,2017:12.3,2018:13.5,2019:14.9,2022:9.7,2023:9.4,2024:11.3,2025:14.4},
+       state:{2015:49.6,2016:53.0,2017:56.1,2018:57.8,2019:57.9,2022:48.9,2023:51.2,2024:51.2,2025:53.6}},
+  math:{kipp:{2016:10.6,2017:18.7,2018:24.6,2019:20.7,2022:9.9,2023:12.5,2024:22.4,2025:26.2},
+       dist:{2015:4.3,2016:7.3,2017:8.9,2018:9.6,2019:9.4,2022:4.1,2023:5.5,2024:7.3,2025:10.2},
+       state:{2015:39.0,2016:43.3,2017:43.8,2018:45.4,2019:45.1,2022:34.5,2023:37.0,2024:38.6,2025:41.0}},
+  internal:{ela:[],math:[]}},
+ {id:'miami', name:'KIPP Miami', col:'var(--s5)', dom:[2021,2026],
+  district:'Miami-Dade County (M-DCPS)', state:'Florida',
+  note:'FSA in 2021-2022 (2021 COVID-depressed); FAST/B.E.S.T. from 2023 — the switch affects all three lines equally. Miami-Dade is an A-rated district that outperforms Florida; KIPP Miami opened in 2018 and started far below both lines. The story here is convergence: the distance to the state has roughly <b>halved or better</b> in five years.',
+  chips:['Gap to state, ELA: <b>−35.7 pp (2021) → −12.9 (2026)</b>','Gap to state, math: <b>−34.1 pp (2021) → −10.8 (2026)</b>','Fastest-improving line on this page: ELA <b>+31.6</b>, math <b>+37.7</b> since 2021'],
+  ela:{kipp:{2021:16.3,2022:15.8,2023:23.5,2024:32.8,2025:41.3,2026:47.9},
+       dist:{2021:54.6,2022:56.4,2023:52.7,2024:55.5,2025:60.5,2026:65},
+       state:{2021:52,2022:52.3,2023:50.4,2024:53,2025:56.8,2026:60.8}},
+  math:{kipp:{2021:13.4,2022:22.0,2023:33.7,2024:40.7,2025:41.5,2026:51.1},
+       dist:{2021:44.8,2022:53.6,2023:58.8,2024:59.4,2025:63.5,2026:67},
+       state:{2021:47.5,2022:51.9,2023:55.7,2024:55.7,2025:58.7,2026:61.9}},
+  internal:{ela:[],math:[]}},
+ {id:'nyc', name:'KIPP NYC', col:'var(--s2)', dom:[2015,2026],
+  district:'NYC district schools (citywide)', state:'New York',
+  note:'NYSED declared results non-comparable across the 2016, 2018, and 2023 test changes (dashed verticals) — the gap over the district is the drift-proof measure, since recalibration moves all NY lines together. KIPP NYC’s 2022 math point is understated (KIPP Infinity suppressed in the state file). In 2015 KIPP NYC’s ELA sat <b>below</b> the citywide average.',
+  chips:['ELA gap over district: <b>−5.1 (2015) → +12.4 (2018) → +10.1 (2025)</b>','Math gap over district: <b>+27-28 (2018-19) → +14.3 (2025)</b>','2025: <b>66.4 ELA / 71.2 math</b> vs district 56.3 / 56.9'],
+  ela:{kipp:{2015:25.6,2016:45.4,2017:50.8,2018:59.1,2019:56.5,2022:51.3,2023:55.0,2024:55.2,2025:66.4},
+       dist:{2015:30.7,2016:38.4,2017:41.0,2018:46.7,2019:47.4,2022:49.0,2023:51.7,2024:49.1,2025:56.3},
+       state:{2015:31.3,2016:37.9,2017:39.8,2018:45.2,2019:45.4,2022:46.6,2023:48,2024:46.3,2025:53.2}},
+  math:{kipp:{2015:48.1,2016:54.9,2017:59.3,2018:70.0,2019:73.9,2022:44.5,2023:69.0,2024:70.6,2025:71.2},
+       dist:{2015:35.6,2016:36.8,2017:38.1,2018:42.7,2019:45.6,2022:37.9,2023:49.9,2024:53.4,2025:56.9},
+       state:{2015:38.1,2016:39.1,2017:40.2,2018:44.5,2019:46.7,2022:38.6,2023:52,2024:52.3,2025:55.1}},
+  internal:{ela:[],math:[]}, suppressed:{math:[2022]}, nybreaks:[[2016,'Shorter, untimed'],[2018,'2-day, revised standards'],[2023,'Next-Gen recalibration']]}
+];
+
+function panelChart(host, R, subj, title){
+ const W=500,H=340,m={l:40,r:104,t:24,b:30};
+ const div=document.createElement('div');host.appendChild(div);
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%'},div);
+ const tl=el('text',{x:m.l,y:15,'font-size':13,'font-weight':600,fill:'var(--ink-1)'},svg);tl.textContent=title;
+ const [y0,y1]=R.dom;
+ const x=yr=>m.l+(W-m.l-m.r)*(yr-y0)/(y1-y0), y=v=>H-m.b-(H-m.t-m.b)*v/80;
+ [0,20,40,60,80].forEach(v=>{el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:v===0?'var(--baseline)':'var(--grid)'},svg);
+  const t=el('text',{x:m.l-6,y:y(v)+4,'text-anchor':'end','font-size':10,fill:'var(--ink-3)'},svg);t.textContent=v;});
+ const xt = (y1-y0>6)?[2015,2018,2022,2025]:[2021,2023,2026]; // tick years by domain
+ xt.forEach(v=>{const t=el('text',{x:x(v),y:H-m.b+16,'text-anchor':'middle','font-size':10,fill:'var(--ink-3)'},svg);t.textContent=v;});
+ if(R.nybreaks){R.nybreaks.forEach(([yr,label])=>{el('line',{x1:x(yr),x2:x(yr),y1:m.t,y2:H-m.b,stroke:'var(--ink-3)','stroke-dasharray':'2 3',opacity:0.7},svg);
+  const t=el('text',{x:x(yr)+3,y:H-m.b-6,'font-size':8.5,fill:'var(--ink-3)',transform:`rotate(-90 ${x(yr)+3} ${H-m.b-6})`},svg);t.textContent=label;});}
+ if(R.id==='miami'){el('line',{x1:x(2023),x2:x(2023),y1:m.t,y2:H-m.b,stroke:'var(--ink-3)','stroke-dasharray':'2 3',opacity:0.7},svg);
+  const t=el('text',{x:x(2023)+3,y:H-m.b-6,'font-size':8.5,fill:'var(--ink-3)',transform:`rotate(-90 ${x(2023)+3} ${H-m.b-6})`},svg);t.textContent='FSA → FAST';}
+ if(R.dom[0]<2020&&R.dom[1]>2020){const g=el('text',{x:x(2020.5),y:y(4),'text-anchor':'middle','font-size':9,fill:'var(--ink-3)'},svg);g.textContent='no tests ’20-21';}
+ const D=R[subj];
+ const seriesDef=[
+  ['state',R.state+' statewide','var(--neutral)','5 4',1.8],
+  ['dist',R.district,'var(--neutral)',null,1.8],
+  ['kipp',R.name,R.col,null,2.4]];
+ const endLabels=[];
+ seriesDef.forEach(([k,name,col,dash,wd])=>{
+  const vv=D[k]; let path='',prev=null;
+  const yrs=Object.keys(vv).map(Number).sort((a,b)=>a-b);
+  yrs.forEach(yr=>{const v=vv[yr];if(v==null)return;
+   path+=`${prev==null||yr-prev>1?'M':'L'}${x(yr)},${y(v)} `;prev=yr;});
+  const pa={d:path,fill:'none',stroke:col,'stroke-width':wd,'stroke-linejoin':'round'};
+  if(dash)pa['stroke-dasharray']=dash;
+  el('path',pa,svg);
+  if(k==='kipp'&&R.internal[subj].length){R.internal[subj].forEach(iy=>{const py=yrs.filter(v=>v<iy).pop();
+   if(py!=null){el('line',{x1:x(py),y1:y(vv[py]),x2:x(iy),y2:y(vv[iy]),stroke:col,'stroke-width':wd,'stroke-dasharray':'4 4'},svg);}});}
+  yrs.forEach(yr=>{const v=vv[yr];if(v==null)return;
+   const isInt=k==='kipp'&&R.internal[subj].includes(yr);
+   const isSup=k==='kipp'&&R.suppressed&&(R.suppressed[subj]||[]).includes(yr);
+   const c=el('circle',{cx:x(yr),cy:y(v),r:k==='kipp'?4:3,fill:isInt?'var(--surface-1)':col,stroke:isInt?col:'var(--surface-1)','stroke-width':isInt?2:1.5},svg);
+   hover(c,`<strong>${name}, ${yr}</strong><br>${v}% proficient${isInt?' — internal; state files not yet public':''}${isSup?' — understated: KIPP Infinity suppressed in state file':''}`);});
+  const lastYr=yrs[yrs.length-1];
+  endLabels.push({y:y(vv[lastYr]),x:x(lastYr)+8,text:`${k==='kipp'?'KIPP':(k==='dist'?'District':'State')} ${vv[lastYr]}${(k==='kipp'&&R.internal[subj].includes(lastYr))?'*':''}`,bold:k==='kipp'});
+ });
+ endLabels.sort((a,b)=>a.y-b.y);
+ for(let i=1;i<endLabels.length;i++){if(endLabels[i].y-endLabels[i-1].y<14)endLabels[i].y=endLabels[i-1].y+14;}
+ endLabels.forEach(L=>{const t=el('text',{x:L.x,y:L.y+4,'font-size':10.5,'font-weight':L.bold?700:400,fill:L.bold?'var(--ink-1)':'var(--ink-2)'},svg);t.textContent=L.text;});
+}
+
+/* ---------- improvement scoreboard charts: net vs district and net vs state ---------- */
+function drawNet(divId, baseKey, baseName){
+ const W=1000,rowH=46,m={l:330,r:70,t:30,b:30};
+ const H=m.t+IMPROVE.length*rowH+m.b;
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%'},document.getElementById(divId));
+ const min=-8,max=24, x=v=>m.l+(W-m.l-m.r)*(Math.max(min,Math.min(max,v))-min)/(max-min);
+ const ttl=el('text',{x:m.l,y:14,'font-size':12,'font-weight':600,fill:'var(--ink-2)'},svg);
+ ttl.textContent=`Net improvement vs. ${baseName} (pp) — ELA solid, Math pale`;
+ [-8,0,8,16,24].forEach(v=>{el('line',{x1:x(v),x2:x(v),y1:m.t,y2:H-m.b,stroke:v===0?'var(--baseline)':'var(--grid)','stroke-width':v===0?1.5:1},svg);
+  const t=el('text',{x:x(v),y:H-10,'text-anchor':'middle','font-size':11,fill:'var(--ink-3)'},svg);t.textContent=(v>0?'+':'')+v;});
+ IMPROVE.forEach((d,i)=>{const yy=m.t+rowH*i+6;
+  const lab=el('text',{x:m.l-10,y:yy+rowH/2-2,'text-anchor':'end','font-size':12,fill:'var(--ink-1)'},svg);
+  lab.textContent=d.label+(d.fn||'');
+  [['ela',0,1],['math',17,0.5]].forEach(([subj,dy,op])=>{
+   const net=+(d[subj].k-d[subj][baseKey]).toFixed(1), pos=net>=0;
+   const r=el('rect',{x:pos?x(0):x(net),y:yy+dy,width:Math.max(1.5,Math.abs(x(net)-x(0))),height:14,rx:4,fill:d.col,opacity:op},svg);
+   hover(r,`<strong>${d.label}${d.fn||''}</strong><br>${subj.toUpperCase()}: KIPP +${d[subj].k} vs ${baseName} +${d[subj][baseKey]} → net ${net>0?'+':''}${net} pp`);
+   const t=el('text',{x:pos?x(net)+6:x(net)-6,y:yy+dy+11,'text-anchor':pos?'start':'end','font-size':10.5,'font-weight':600,fill:'var(--ink-1)'},svg);
+   t.textContent=(net>0?'+':'')+net;});
+ });
+}
+drawNet('c_improve','d','own district');
+drawNet('c_improve_state','s','state average');
+(function(){
+ const rows=IMPROVE.map(d=>{
+  const f=(o)=>[`+${o.k}`,`+${o.d}`,`+${o.s}`,`<b>${(o.k-o.d)>=0?'+':''}${(o.k-o.d).toFixed(1)}</b>`,`<b>${(o.k-o.s)>=0?'+':''}${(o.k-o.s).toFixed(1)}</b>`];
+  return [d.label+(d.fn||''), ...f(d.ela), ...f(d.math)];});
+ let h='<table><tr><th rowspan="2" style="vertical-align:bottom;">Region / window</th><th colspan="5">ELA (pp)</th><th colspan="5">Math (pp)</th></tr>';
+ h+='<tr>'+['KIPP Δ','District Δ','State Δ','Net vs district','Net vs state','KIPP Δ','District Δ','State Δ','Net vs district','Net vs state'].map(x=>`<th>${x}</th>`).join('')+'</tr>';
+ rows.forEach(r=>{h+='<tr>'+r.map(x=>`<td>${x}</td>`).join('')+'</tr>';});
+ document.getElementById('t_improve').innerHTML=h+'</table>';
+})();
+
+/* ---------- NAEP adjustment chart ---------- */
+(function(){
+ const GROUPS=[
+  {subj:'ELA', rows:[
+    ['New Jersey — actual (NJSLA 2025)', 53.6, null, 'var(--neutral)', 1],
+    ['New York — as reported (2025)', 53.2, null, 'var(--s2)', 1],
+    ['New York — adjusted to NJ-rigor bar', 47, [45,49], 'var(--s2)', 0.5]]},
+  {subj:'Math', rows:[
+    ['New Jersey — actual (NJSLA 2025)', 41.0, null, 'var(--neutral)', 1],
+    ['New York — as reported (2025)', 55.1, null, 'var(--s2)', 1],
+    ['New York — adjusted to NJ-rigor bar', 34, [31,37], 'var(--s2)', 0.5]]}];
+ const W=1000,rowH=30,gGap=34,m={l:330,r:70,t:14,b:30};
+ const nRows=GROUPS.reduce((a,g)=>a+g.rows.length,0);
+ const H=m.t+nRows*rowH+GROUPS.length*gGap+m.b;
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%'},document.getElementById('c_adj'));
+ const x=v=>m.l+(W-m.l-m.r)*v/60;
+ [0,20,40,60].forEach(v=>{el('line',{x1:x(v),x2:x(v),y1:m.t,y2:H-m.b,stroke:v===0?'var(--baseline)':'var(--grid)'},svg);
+  const t=el('text',{x:x(v),y:H-10,'text-anchor':'middle','font-size':11,fill:'var(--ink-3)'},svg);t.textContent=v+'%';});
+ let yy=m.t;
+ GROUPS.forEach(g=>{
+  const st=el('text',{x:m.l-10,y:yy+14,'text-anchor':'end','font-size':13,'font-weight':700,fill:'var(--ink-1)'},svg);
+  st.textContent=g.subj; yy+=22;
+  g.rows.forEach(([name,v,range,col,op])=>{
+   const lab=el('text',{x:m.l-10,y:yy+14,'text-anchor':'end','font-size':11.5,fill:'var(--ink-2)'},svg);lab.textContent=name;
+   const r=el('rect',{x:x(0),y:yy+3,width:x(v)-x(0),height:15,rx:4,fill:col,opacity:op},svg);
+   hover(r,`<strong>${name}</strong><br>${v}%${range?` (range ${range[0]}–${range[1]} across methods)`:''}`);
+   if(range){el('line',{x1:x(range[0]),x2:x(range[1]),y1:yy+10.5,y2:yy+10.5,stroke:'var(--ink-1)','stroke-width':1.5},svg);
+    [range[0],range[1]].forEach(rv=>el('line',{x1:x(rv),x2:x(rv),y1:yy+6,y2:yy+15,stroke:'var(--ink-1)','stroke-width':1.5},svg));}
+   const t=el('text',{x:x(range?range[1]:v)+8,y:yy+14,'font-size':11.5,'font-weight':600,fill:'var(--ink-1)'},svg);
+   t.textContent=range?`~${v} (${range[0]}–${range[1]})`:v;
+   yy+=rowH;});
+  yy+=gGap-22;});
+})();
+(function(){
+ let h='<table><tr><th>Input</th><th>ELA</th><th>Math</th><th>Basis</th></tr>';
+ [['Maryland (NY’s NAEP twin) on MCAP, 2025','50.8','26.5','MD ≈ NY on all four NAEP 2024 cells (composite 244.05 vs 244.15); MD math cut maps at 254 — harder than NJ’s 249, so NJ-bar-adjusted math ≈ 30–33'],
+  ['Illinois on IAR (pre-2025 cuts), 2024','~41','28.4','IL NAEP slightly above NY; ISBE lowered these cuts in 2025, citing that they were ~4th-hardest nationally'],
+  ['NY share at/above NAEP Proficient, G4 math 2024','—','36.6','NJ’s G4 math cut = NAEP Proficient (249) exactly; NJ’s own reported 45% ≈ its NAEP-Proficient share 43.9% — the method reproduces NJ almost perfectly'],
+  ['NY reported, same cells','G4 ELA 47 / 3-8 53.2 (2025)','G4 58 / 3-8 55.1 (2025)','NYSED'],
+  ['Resulting adjustment','ELA −4 to −8 pp (cuts near-equal at G4, NJ harder at G8)','Math −18 to −24 pp','Reading cuts: NJ 229 vs NY 227 (G4), NJ 271 vs NY 263 (G8); math cuts: NJ 249 vs NY 236 (G4)']]
+  .forEach(r=>{h+='<tr>'+r.map(x=>`<td>${x}</td>`).join('')+'</tr>';});
+ h+='</table><p style="font-size:12px;color:var(--ink-3);margin-top:8px;">Caveats: grade-8 math is excluded from all methods (accelerated students take Algebra I/Regents instead, negatively selecting the tested pool in both states — the NCES mapping omits NJ/NY G8 math for the same reason). The NCES cuts are from 2022 tests; New York re-anchored its baseline downward in 2023 and has not been re-mapped, so these adjustments are conservative — the true current gap is likely larger. All adjusted figures are estimates for framing, not official statistics.</p>';
+ document.getElementById('t_adj').innerHTML=h;
+})();
+
+const host=document.getElementById('panels');
+REGIONS.forEach(R=>{
+ const card=document.createElement('div');card.className='card';host.appendChild(card);
+ const h=document.createElement('h3');h.textContent=R.name+' vs. '+R.district+' vs. '+R.state;card.appendChild(h);
+ const p=document.createElement('p');p.className='note';p.innerHTML=R.note;card.appendChild(p);
+ const lg=document.createElement('div');lg.className='legend';
+ lg.innerHTML=`<span class="it"><span class="sw" style="background:${R.col.replace('var(','var(')}"></span>${R.name}</span>
+  <span class="it"><span class="swl"></span>${R.district}</span>
+  <span class="it"><span class="swd"></span>${R.state} statewide</span>`;
+ card.appendChild(lg);
+ const duo=document.createElement('div');duo.className='duo';card.appendChild(duo);
+ panelChart(duo,R,'ela','ELA');
+ panelChart(duo,R,'math','Math');
+ const chips=document.createElement('div');chips.className='chips';
+ chips.innerHTML=R.chips.map(c=>`<span class="chip pos">${c}</span>`).join('');
+ card.appendChild(chips);
+ // data table
+ const det=document.createElement('details');det.className='tbl';
+ const years=[...new Set([].concat(...['ela','math'].flatMap(s=>['kipp','dist','state'].map(k=>Object.keys(R[s][k]).map(Number)))))].flat().sort();
+ const uyears=[...new Set(years)];
+ let th='<table><tr><th>Year</th><th>KIPP ELA</th><th>District ELA</th><th>State ELA</th><th>KIPP Math</th><th>District Math</th><th>State Math</th></tr>';
+ uyears.forEach(yr=>{const g=(s,k)=>{const v=R[s][k][yr];return v==null?'—':v+(k==='kipp'&&R.internal[s].includes(yr)?' (int.)':'');};
+  th+=`<tr><td>${yr}</td><td>${g('ela','kipp')}</td><td>${g('ela','dist')}</td><td>${g('ela','state')}</td><td>${g('math','kipp')}</td><td>${g('math','dist')}</td><td>${g('math','state')}</td></tr>`;});
+ det.innerHTML='<summary>Data table</summary>'+th+'</table>';
+ card.appendChild(det);
+});
+</script>
+</body>
+</html>
