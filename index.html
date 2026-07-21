@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Kipp Regional Context",
+  "schemaVersion": 1,
+  "description": "Cross-state normalized comparison of KIPP regions (KTAF/NJ, NOLA, NorCal, Miami vs NYC): CSGF SSM/SGP leaderboards, NY test-difficulty drift, NAEP mapping, funding and market-structure context, long-run trajectories.",
+  "mcpTools": [],
+  "mcpServerNames": []
+}
+</script>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KIPP Regional Performance in Context</title>
+<style>
+  .viz-root, :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb; --page: #f9f9f7;
+    --ink-1: #0b0b0b; --ink-2: #52514e; --ink-3: #898781;
+    --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --s1: #2a78d6; /* KTAF / NJ — blue */
+    --s2: #eb6834; /* NYC — orange */
+    --s3: #1baf7a; /* NorCal — aqua */
+    --s4: #eda100; /* NOLA — yellow */
+    --s5: #e87ba4; /* Miami — magenta */
+    --neutral: #b5b3ac;
+    --good-text: #006300;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --page: #0d0d0d;
+      --ink-1: #ffffff; --ink-2: #c3c2b7; --ink-3: #898781;
+      --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+      --neutral: #5a5954; --good-text: #0ca30c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink-1);
+         font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.5; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 20px 80px; }
+  header.hero { padding: 40px 0 8px; }
+  header.hero h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  header.hero p.sub { color: var(--ink-2); font-size: 15px; max-width: 72ch; margin: 0; }
+  .badge { display:inline-block; font-size: 11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+           color: var(--ink-3); border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; margin-bottom: 10px;}
+  section { margin-top: 44px; }
+  section > h2 { font-size: 21px; margin: 0 0 4px; letter-spacing: -0.01em;}
+  section > p.lede { color: var(--ink-2); font-size: 14.5px; max-width: 78ch; margin: 4px 0 16px; }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
+          padding: 20px 22px; margin-top: 14px; }
+  .card h3 { margin: 0 0 2px; font-size: 15.5px; }
+  .card p.note { color: var(--ink-3); font-size: 12.5px; margin: 2px 0 14px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 14px; }
+  .tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+  .tile .v { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; }
+  .tile .l { font-size: 12.5px; color: var(--ink-2); margin-top: 2px; }
+  .tile .d { font-size: 12px; color: var(--ink-3); margin-top: 6px; }
+  .up { color: var(--good-text); font-weight: 600; }
+  svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .legend { display:flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--ink-2); margin: 4px 0 10px; }
+  .legend .it { display:flex; align-items:center; gap:6px; }
+  .sw { width: 10px; height: 10px; border-radius: 3px; display:inline-block; }
+  details.tbl { margin-top: 10px; font-size: 13px; }
+  details.tbl summary { cursor: pointer; color: var(--ink-3); font-size: 12.5px; }
+  details.tbl table { border-collapse: collapse; margin-top: 8px; width: 100%; }
+  details.tbl th, details.tbl td { text-align: left; padding: 4px 10px 4px 0; border-bottom: 1px solid var(--grid);
+      font-variant-numeric: tabular-nums; font-size: 12.5px; }
+  details.tbl th { color: var(--ink-3); font-weight: 600; }
+  .tooltip { position: fixed; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border);
+             border-radius: 8px; padding: 6px 10px; font-size: 12.5px; color: var(--ink-1);
+             box-shadow: 0 4px 14px rgba(0,0,0,.12); opacity: 0; transition: opacity .12s; z-index: 50; max-width: 260px;}
+  .callout { border-left: 3px solid var(--s1); padding: 2px 0 2px 14px; margin: 14px 0; color: var(--ink-2); font-size: 14px; max-width: 76ch;}
+  .foot { margin-top: 56px; border-top: 1px solid var(--grid); padding-top: 18px; font-size: 12.5px; color: var(--ink-3); }
+  .foot a { color: var(--ink-2); }
+  .srcs { font-size: 12px; color: var(--ink-3); margin-top: 10px; line-height: 1.7;}
+  .srcs a { color: var(--ink-3); }
+  @media (max-width: 640px){ .card { padding: 14px; } }
+</style>
+</head>
+<body class="viz-root">
+<div class="wrap">
+
+<header class="hero">
+  <div class="badge">Cross-regional analysis · SY 2023-24 → 2024-25 · with long-run trajectories</div>
+  <h1>KIPP Regional Performance in Context</h1>
+  <p class="sub">A normalized look at KIPP TEAM &amp; Family (Newark · Camden · Miami), KIPP New Orleans, KIPP
+  Public Schools Northern California, and KIPP NYC — using the measures that are designed to travel across
+  state lines (CSGF Similar Students Measure and student growth percentiles), plus test-difficulty,
+  funding, and market-structure context that raw proficiency comparisons leave out.</p>
+</header>
+
+<section id="headline">
+  <h2>The headline: on the fairest common yardstick, these regions are near the top of the network</h2>
+  <p class="lede">The Charter School Growth Fund's Similar Students Measure (SSM) is a percentile that compares each
+  school with schools <em>in its own state</em> serving similar student populations — the cleanest available control for
+  demographics and for each state's test. Student-weighted across subjects, SY 2024-25:</p>
+  <div class="tiles">
+    <div class="tile"><div class="v" style="color:var(--s1)">#3 <span style="font-size:16px;color:var(--ink-3)">of 21</span></div>
+      <div class="l">KIPP TEAM &amp; Family — SSM 82.1</div><div class="d">Behind only Memphis (91.5) and NYC (88.1). NJ schools alone: 83.8, <span class="up">up +2.8</span> YoY. Miami: 73.2.</div></div>
+    <div class="tile"><div class="v" style="color:var(--s3)">#5 <span style="font-size:16px;color:var(--ink-3)">of 21</span></div>
+      <div class="l">KIPP Northern California — SSM 73.9</div><div class="d">Outperforms California statewide in both subjects; 2× the state's grade-11 math proficiency.</div></div>
+    <div class="tile"><div class="v" style="color:var(--s1)">+23 <span style="font-size:16px;color:var(--ink-3)">pts</span></div>
+      <div class="l">KTAF vs network mean</div><div class="d">Network student-weighted SSM is 59.0. TEAM &amp; Family sits 23 points above it.</div></div>
+    <div class="tile"><div class="v" style="color:var(--s2)">6 <span style="font-size:16px;color:var(--ink-3)">pts</span></div>
+      <div class="l">NYC's SSM edge over KTAF</div><div class="d">88.1 vs 82.1 — measured against NY's own state test, whose proficiency bar has moved substantially (see below).</div></div>
+  </div>
+  <div class="card">
+    <h3>CSGF Similar Students Measure — CMO leaderboard, SY 2024-25</h3>
+    <p class="note">Student-weighted percentile across ELA + Math, computed from school-level CSGF data. Higher = outperforming schools serving similar students in the same state.</p>
+    <div id="c_leader"></div>
+    <details class="tbl"><summary>Data table</summary><div id="t_leader"></div></details>
+  </div>
+  <p class="callout">SSM is a <strong>within-state</strong> percentile. It cannot see that New York's proficiency bar
+  sits lower than New Jersey's, or that New York's cut scores have drifted down. Even so — with the deck stacked
+  that way — the gap between KIPP NYC and KIPP TEAM &amp; Family is six points, and Newark's schools alone
+  (SSM 83.8) essentially match it.</p>
+</section>
+
+<section id="growth">
+  <h2>Status vs. growth: the regions' students are gaining as fast — or faster</h2>
+  <p class="lede">SSM is a snapshot of <em>where students are</em>; median Student Growth Percentile (SGP) measures
+  <em>how fast they're improving</em>, the thing a school controls most directly and the measure least distorted
+  by state-to-state differences in test difficulty. Two different stories:</p>
+  <div class="card">
+    <h3>SSM (status) vs. SGP (growth), SY 2024-25 — every KIPP CMO</h3>
+    <p class="note">Student-weighted, both subjects. Dashed lines mark the network medians. Top-right = high-performing <em>and</em> fast-improving.</p>
+    <div class="legend">
+      <span class="it"><span class="sw" style="background:var(--s1)"></span>TEAM &amp; Family</span>
+      <span class="it"><span class="sw" style="background:var(--s2)"></span>NYC</span>
+      <span class="it"><span class="sw" style="background:var(--s3)"></span>NorCal</span>
+      <span class="it"><span class="sw" style="background:var(--s4)"></span>New Orleans</span>
+      <span class="it"><span class="sw" style="background:var(--neutral)"></span>Other KIPP CMOs</span>
+    </div>
+    <div id="c_scatter"></div>
+    <details class="tbl"><summary>Data table</summary><div id="t_scatter"></div></details>
+  </div>
+  <div class="card">
+    <h3>Student growth percentile, two-year view</h3>
+    <p class="note">Student-weighted median SGP across subjects. 50 = typical growth for academically similar students.</p>
+    <div id="c_sgp"></div>
+    <details class="tbl"><summary>Data table</summary><div id="t_sgp"></div></details>
+  </div>
+  <p class="callout"><strong>KIPP TEAM &amp; Family's students out-grew KIPP NYC's students in both of the last two
+  years</strong> (SGP 74.9 vs 48.7 in 2023-24; 69.3 vs 58.8 in 2024-25). NYC's position is real, but it is a
+  <em>status</em> advantage — an inheritance of level, not a growth engine other regions have failed to copy. A region
+  posting ~49th-percentile growth in 2023-24 is, by definition, improving at the rate of the average school —
+  which is worth remembering when a +12-point-per-year expectation is framed as a matter of replicating NYC practice.</p>
+</section>
+
+<section id="yardstick">
+  <h2>New York's moving yardstick</h2>
+  <p class="lede">Between 2013 and 2025, New York State's reported 3-8 proficiency rose by ~22 points in ELA and
+  ~24 points in math. Over the same period, the state's own raw-score bar for "proficient" fell (from 68% to 52%
+  of available points in math; 70% to 59% in ELA), NYSED declared results non-comparable across at least four
+  breaks — and New York's NAEP scores <em>declined</em>. Any KIPP NYC trend line drawn across this period inherits
+  that drift.</p>
+  <div class="card">
+    <h3>NY statewide 3-8 proficiency, 2013–2025 — with every comparability break NYSED itself declared</h3>
+    <p class="note">Grades 3-8, Levels 3+4. Shaded band = Jim Manly's KIPP NYC superintendency (2015 – spring 2023). No tests in 2020; 2021 not representative.</p>
+    <div class="legend">
+      <span class="it"><span class="sw" style="background:var(--s1)"></span>ELA</span>
+      <span class="it"><span class="sw" style="background:var(--s2)"></span>Math</span>
+    </div>
+    <div id="c_nydrift"></div>
+    <details class="tbl"><summary>Data table</summary><div id="t_nydrift"></div></details>
+  </div>
+  <div class="tiles">
+    <div class="tile"><div class="v">4</div><div class="l">Comparability breaks, 2013–2025</div>
+      <div class="d">2013 Common Core reset · 2016 shorter/untimed tests · 2018 two-day format &amp; revised standards · 2023 Next-Gen recalibration ("the new baseline is 2022" — NYSED technical advisory co-chair).</div></div>
+    <div class="tile"><div class="v">−16 <span style="font-size:16px;color:var(--ink-3)">pts</span></div><div class="l">Math raw-score bar, 2013→2025</div>
+      <div class="d">Share of points needed for "proficient" fell 68%→52% (ELA 70%→59%) — Empire Center analysis of NYSED conversion charts.</div></div>
+    <div class="tile"><div class="v">+11 <span style="font-size:16px;color:var(--ink-3)">pts</span></div><div class="l">Statewide math, 2022→2023, one year</div>
+      <div class="d">The recalibration-year jump (38.6%→~50%). NYC citywide math jumped ~12 points the same year. No instructional explanation was offered; NYSED warned against comparison.</div></div>
+    <div class="tile"><div class="v">−5.0</div><div class="l">NY NAEP G4 reading, 2019→2024</div>
+      <div class="d">While reported state-test proficiency rose. FutureEd lists NY among states whose lowered thresholds "artificially inflated gains."</div></div>
+  </div>
+  <div class="card">
+    <h3>KIPP NYC's advantage over NYC district schools — the drift-proof view</h3>
+    <p class="note">Percentage-point gap, KIPP NYC minus NYC citywide district, grades 3-8. Recalibration lifts both lines, so the gap nets out scale drift. 2022 math understated (KIPP Infinity suppressed in state file).</p>
+    <div class="legend">
+      <span class="it"><span class="sw" style="background:var(--s1)"></span>ELA gap</span>
+      <span class="it"><span class="sw" style="background:var(--s2)"></span>Math gap</span>
+    </div>
+    <div id="c_gap"></div>
+    <details class="tbl"><summary>Data table</summary><div id="t_gap"></div></details>
+  </div>
+  <p class="callout">KIPP NYC's headline claim for 2015-2023 — math proficiency 55%→74% — spans three of the four
+  breaks above, during which statewide math went from 38% to 50%+ on progressively easier scoring. The
+  drift-proof measure is the <em>gap</em> over the district: in math it was <strong>+27 to +28 points before COVID and
+  +14 to +19 points since</strong>. KIPP NYC remains an excellent system — but its relative advantage inside its own
+  city is smaller today than it was in 2018-19, which is difficult to reconcile with the premise that its recent
+  playbook is the network's export-ready growth model.</p>
+</section>
+
+<section id="crossstate">
+  <h2>Not all "proficient" is created equal</h2>
+  <p class="lede">NCES's mapping study places every state's proficiency cut on the common NAEP scale. In the most
+  recent mapping (2022 — the last before NY re-anchored its baseline to post-pandemic performance), New Jersey's
+  grade-4 math bar sat at the NAEP Proficient line itself, 13 points above New York's. A Newark student and a
+  Bronx student called "proficient" are not clearing the same bar.</p>
+  <div class="card">
+    <h3>Where each state's "proficient" cut falls on the NAEP scale — grade 4, 2022 mapping</h3>
+    <p class="note">NAEP scale-score equivalents of state proficiency cuts (NCES). Reference lines: NAEP Basic and NAEP Proficient. Higher = harder test to pass.</p>
+    <div id="c_naepmap"></div>
+    <details class="tbl"><summary>Data table</summary><div id="t_naepmap"></div></details>
+  </div>
+  <div class="card">
+    <h3>The independent audit: NAEP grade-4 reading, change 2019→2024</h3>
+    <p class="note">The only test every state takes. Louisiana is one of only two states to fully recover to pre-pandemic levels in grade-4 reading — #1 in the nation for reading recovery two scorecards running.</p>
+    <div id="c_naeptrend"></div>
+    <details class="tbl"><summary>Data table</summary><div id="t_naeptrend"></div></details>
+  </div>
+  <p class="callout">This context reframes the regional comparisons. KIPP New Jersey posts SSM 83.8 against
+  the <strong>hardest</strong> proficiency bar of these five states. KIPP New Orleans operates in the state producing the
+  nation's best-documented post-COVID recovery — a rising bar, not a falling one. New York, meanwhile, re-set its
+  baseline to 2022's depressed performance and has posted state-test gains while its NAEP scores fell. A network
+  formula that projects "+12 points a year" off NY-style score movement is projecting, in part, the behavior of
+  New York's scale — not a transferable instructional effect.</p>
+</section>
+
+<section id="resources">
+  <h2>The resource and market context NYC comparisons omit</h2>
+  <p class="lede">Even a perfectly normalized test comparison would still ignore what it costs to produce a point of
+  achievement in each city. The differences are not marginal — they are structural.</p>
+  <div class="tiles">
+    <div class="tile"><div class="v">$35.8k</div><div class="l">NYC spending per pupil (Census FY24)</div>
+      <div class="d">Highest of the 100 largest US school systems. NYC charters also receive free co-located DOE space or mandatory rental assistance — a facilities subsidy most regions never see.</div></div>
+    <div class="tile"><div class="v">2–3×</div><div class="l">NY per-pupil vs LA &amp; FL</div>
+      <div class="d">New York State leads the nation ($31.9k, Census FY24); Louisiana (~$14-15k) and Florida (~$12k) fund at one-half to one-third of that; KIPP Miami operates on among the lowest charter funding in the network.</div></div>
+    <div class="tile"><div class="v">~1%</div><div class="l">Share of NYC students KIPP NYC serves</div>
+      <div class="d">~9-10k students in a system of ~1M, drawing teachers from the country's deepest labor pool (~75k+ NYC teachers, plus national draw).</div></div>
+    <div class="tile"><div class="v">~12%</div><div class="l">Share of the city served in Newark &amp; New Orleans</div>
+      <div class="d">At 12%+ of a city's students, a CMO is educating close to the full distribution of the city's kids — while hiring from a labor market a fraction of NYC's size.</div></div>
+  </div>
+  <div class="card">
+    <h3>Structural conditions, side by side</h3>
+    <p class="note">Why per-proficiency-point comparisons across these regions are not apples to apples.</p>
+    <div id="t_structure"></div>
+  </div>
+  <p class="callout">New Orleans, Newark, and Camden operate under <strong>universal enrollment</strong> (OneApp/NCAP,
+  Newark Enrolls, Camden's unified system): centralized lotteries, mandatory backfill, mid-year intake of highly
+  mobile students. NYC charters run their own lotteries and are not required to backfill upper grades. Research
+  consistently shows backfill and mid-year mobility depress measured proficiency. This is a design difference,
+  not an excuse — the regions carrying it should not be scored as if it didn't exist.</p>
+</section>
+
+<section id="trajectory">
+  <h2>Long-run trajectories: the regions are on their strongest run in years</h2>
+  <div class="card">
+    <h3>KIPP Newark (TEAM Academy) vs. Newark Public Schools vs. New Jersey — a decade of NJSLA/PARCC</h3>
+    <p class="note">Grades 3-8, % meeting/exceeding expectations, on the nation's most demanding proficiency bar. 2026 KIPP figures are internal (state files not yet public). No tests 2020-21.</p>
+    <div class="legend">
+      <span class="it"><span class="sw" style="background:var(--s1)"></span>KIPP Newark</span>
+      <span class="it"><span class="sw" style="background:var(--neutral)"></span>Newark district</span>
+      <span class="it"><span class="sw" style="background:var(--s3)"></span>NJ statewide</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;" id="c_newark"></div>
+    <details class="tbl"><summary>Data table</summary><div id="t_newark"></div></details>
+  </div>
+  <div class="tiles">
+    <div class="tile"><div class="v up">+18 pp</div><div class="l">KIPP Newark math, 2022→2026</div>
+      <div class="d">17.6% → 25 → 30 → 34 → 43% (internal 2026) — closing on the NJ statewide average on the state with the highest bar in the country, with a student body ~3× poorer.</div></div>
+    <div class="tile"><div class="v up">+16 pp</div><div class="l">KIPP Camden math, 2022→2025</div>
+      <div class="d">9.9% → 26.2% — roughly 2.5× the Camden district rate, in one of the nation's poorest cities.</div></div>
+    <div class="tile"><div class="v up">D → C → A</div><div class="l">KIPP New Orleans letter grades</div>
+      <div class="d">Every elementary/middle school moved D (2022) → C (2023) and held or improved; Frederick Douglass HS reached an <strong>A</strong> (90.4 SPS) in 2025, with math Mastery+ going 17→45 in two years.</div></div>
+    <div class="tile"><div class="v up">+9.0 pp</div><div class="l">KIPP NorCal math, 2021→2025</div>
+      <div class="d">31.8% → 40.8% while California statewide went 33.8% → 37.3% — the region now beats the state in both subjects and doubles it in grade-11 math.</div></div>
+  </div>
+  <div class="card">
+    <h3>Within their own cities, against their own peers</h3>
+    <p class="note">The comparison the network narrative skips: how each region stacks up in its own market, most recent public year.</p>
+    <div id="t_withincity"></div>
+  </div>
+  <p class="callout">One more inconvenient symmetry: in <em>its</em> own market, KIPP NYC's 2024 ELA (55.2%) ran
+  <em>below</em> the NYC charter-sector average (58.2%), and Success Academy — operating under the identical NY test,
+  funding, and labor conditions — ranked #1 in math among 700+ NY districts and networks in 2025. If within-market
+  rank is the standard the Foundation wants to apply to New Orleans and Newark, it is not a standard that
+  flatters New York either.</p>
+</section>
+
+<section id="baserate">
+  <h2>The base-rate test: what the goals actually asked for</h2>
+  <p class="lede">A regional academic-office analysis of Louisiana's public LEAP data (grades 3-8; internal computation,
+  July 2026, checkable against LDOE files) tested the Foundation's growth goals — +13.5 points in ELA and +12.5 in
+  math — against every district and school in the state. The goals were derived from growth rates that
+  <em>individual schools</em> somewhere in the KIPP network hit the prior year, then applied to <em>regions as averages</em>.</p>
+  <div class="tiles">
+    <div class="tile"><div class="v">0 <span style="font-size:16px;color:var(--ink-3)">of 72</span></div>
+      <div class="l">Louisiana districts that met the growth goal</div><div class="d">In either subject. Orleans — the state's fastest-improving district — included. No New Orleans CMO met it either.</div></div>
+    <div class="tile"><div class="v">4</div>
+      <div class="l">Schools statewide that hit both subjects</div><div class="d">2.6% of schools met the math bar; 1.2% ELA. The regional goal required five KIPP NOLA schools to <em>average</em> what only 4 of ~1,300 schools achieved.</div></div>
+    <div class="tile"><div class="v">+4</div>
+      <div class="l">Best district growth in Louisiana, typical year</div><div class="d">+2 to +3 makes the state's most-improved honor roll. The one +6 outlier got there by closing half its schools — composition, not instruction.</div></div>
+    <div class="tile"><div class="v">↓</div>
+      <div class="l">Foundation's revised methodology sets lower goals</div><div class="d">The updated model (90th percentile of in-state school growth) produces goals below the 25-26 goals across the board — an implicit concession the originals weren't calibrated. Evaluations issued under the old goals stand.</div></div>
+  </div>
+  <div class="card">
+    <h3>The Louisiana growth ladder vs. the goal</h3>
+    <p class="note">Annual district-level point growth, grades 3-8 (LDOE data; internal regional analysis). Bars = observed growth benchmarks in the state; dashed lines = the Foundation's regional goals.</p>
+    <div id="c_ladder"></div>
+    <details class="tbl"><summary>Data table</summary><div id="t_ladder"></div></details>
+  </div>
+  <p class="callout"><strong>The aggregation fallacy:</strong> extreme single-school growth is largely variance — small
+  cohorts, one grade configuration, sometimes composition change — and variance shrinks mechanically as portfolios
+  aggregate, so the 90th percentile of <em>school</em> growth always sits far above the 90th percentile of <em>district</em>
+  growth. Expecting a region to average its best member's outlier year is statistically incoherent — and the Foundation's
+  updated methodology carries the same flaw, knowingly unaddressed. The concrete cost: a leader running the #1 school in
+  New Orleans among schools serving &gt;80% economically disadvantaged students would be classified a low performer under
+  these goals. Orleans is the only Louisiana district on the state's most-improved list four consecutive years — up 19
+  ranking spots, outperforming peer large districts for the second time since the 1980s — and no CMO in the city has grown
+  at the goal rate in any of those four years. A region can triple the state's growth rate, lead its city among
+  high-poverty schools, and still be scored a failure. That is a property of the yardstick, not of the schools.</p>
+</section>
+
+<section id="honesty">
+  <h2>What this analysis does <em>not</em> claim</h2>
+  <p class="lede">Credibility requires conceding what the data actually shows.</p>
+  <div class="card">
+    <ul style="margin:6px 0; padding-left:20px; font-size:14px; color:var(--ink-2); line-height:1.8;">
+      <li><strong>KIPP NYC is a strong system.</strong> Top-3 SSM, +14 to +19 points over its district in math, network-leading APR. The claim here is narrower: its edge over KTAF/NorCal is modest once state context is held constant, its growth is mid-pack, and its trend line is inflated by scale drift no school caused.</li>
+      <li><strong>KIPP New Orleans's absolute levels are genuinely low</strong> (SSM 49.0 in 24-25, down from 61.1) and below the Orleans Parish average. The defensible story is trajectory — the D→C→A letter-grade recovery, math roughly doubling from the 2021-22 trough at most schools, in the highest-poverty student body in the network (94.7% SED) — not the level.</li>
+      <li><strong>These are 21-22 CMOs, two years of SSM data.</strong> Descriptive, not causal. Weighted-average rollups of school percentiles slightly understate the pooled CMO figures. YoY moves at small CMOs are noisy.</li>
+      <li><strong>Growth comparisons cut both ways:</strong> much of the rest-of-network's 24-25 SSM gain came from low-baseline regions bouncing (Columbus 16→80, OKC, NC, Capital Region +14-20). Symmetrically, KTAF's "slower growth" reflects being near the ceiling — there is limited headroom above the 82nd percentile.</li>
+    </ul>
+  </div>
+</section>
+
+<div class="foot">
+  <strong>Sources &amp; methods.</strong> CSGF school-level metrics file (SSM/SGP/APR, SY23-24 &amp; SY24-25), student-weighted
+  aggregations across subjects; NJ DOE assessment files 2015–2025; LDOE LEAP Mastery files 2015–2026 and SPS
+  letter grades; CAASPP portal; NYSED/data.nysed.gov researcher files and NYC InfoHub citywide results;
+  NCES NAEP state mapping studies (2019, 2022) and NAEP 2024; Empire Center cut-score analysis; FutureEd NAEP
+  standards-gap analysis; NYC IBO education spending report (2025); U.S. Census school-finance survey;
+  KIPP Foundation and KIPP NYC published results pages; CREDO city studies (Newark, Camden, New Orleans);
+  Education Recovery Scorecard. Full citation list in the accompanying written brief.
+  <div class="srcs">Internal figures (KIPP Newark 2026, region SSM corrections incl. Miami, and the Louisiana base-rate
+  analysis of Foundation growth goals) are marked where used.
+  2026 NAEP state results are expected in early 2027 and will be the next independent check.</div>
+</div>
+
+</div>
+<div class="tooltip" id="tt"></div>
+<script>
+/* ---------- data ---------- */
+const LEADER = [
+ ["KIPP Memphis",91.5,76.0,"o"],["KIPP NYC",88.1,58.8,"nyc"],["KIPP TEAM & Family",82.1,69.3,"ktaf"],
+ ["KIPP Indy",74.4,60.1,"o"],["KIPP NorCal",73.9,51.1,"norcal"],["KIPP Colorado",73.4,73.9,"o"],
+ ["KIPP Nashville",67.2,65.9,"o"],["KIPP OKC",66.5,84.5,"o"],["KIPP SoCal",58.4,51.2,"o"],
+ ["KIPP Texas",57.7,54.9,"o"],["KIPP Tulsa",53.5,85.5,"o"],["KIPP Massachusetts",50.9,35.2,"o"],
+ ["KIPP New Orleans",49.0,42.3,"nola"],["KIPP Metro Atlanta",40.6,66.2,"o"],["KIPP Capital Region",38.6,50.8,"o"],
+ ["KIPP DC",36.0,31.7,"o"],["KIPP North Carolina",34.0,69.6,"o"],["KIPP Jacksonville",32.6,48.2,"o"],
+ ["KIPP Minnesota",21.9,62.3,"o"],["KIPP Philadelphia",8.8,35.0,"o"]];
+const SGP2 = [ // [name, 23-24, 24-25, class]
+ ["TEAM & Family",74.9,69.3,"ktaf"],["NYC",48.7,58.8,"nyc"],["NorCal",58.8,51.1,"norcal"],
+ ["New Orleans",54.3,42.3,"nola"],["Network avg",56.7,55.1,"o"]];
+const NY = { years:[2013,2014,2015,2016,2017,2018,2019,2022,2023,2024,2025],
+ ela:[31.1,30.6,31.3,37.9,39.8,45.2,45.4,46.6,48,46.3,53.2],
+ math:[31.0,36.2,38.1,39.1,40.2,44.5,46.7,38.6,52,52.3,55.1],
+ breaks:[[2013,"Common Core reset"],[2016,"Shorter, untimed"],[2018,"2-day format, revised standards"],[2023,"Next-Gen recalibration"]] };
+const GAP = { years:[2015,2016,2017,2018,2019,2022,2023,2024,2025],
+ ela:[-5.1,7.0,9.8,12.4,9.1,2.3,3.3,6.1,10.1],
+ math:[12.5,18.1,21.2,27.3,28.3,6.6,19.1,17.2,14.3] };
+const NAEPMAP = { // grade 4, 2022 mapping; [state, reading cut, math cut]
+ rows:[["NJ",229,249],["LA",220,241],["CA",224,241],["NY",227,236],["FL",221,232]],
+ basic:{r:208,m:214}, prof:{r:238,m:249} };
+const NAEPTREND = [["Louisiana",6.1],["California",-4.8],["New York",-5.0],["Nation (public)",-5.1],["New Jersey",-5.6],["Florida",-6.5]];
+const NEWARK = { years:[2015,2016,2017,2018,2019,2022,2023,2024,2025,2026],
+ ela:{kipp:[31.4,39.9,46.6,54.4,51.6,34.4,38.8,38.5,44.6,50],npS:[22.2,28.9,32.5,34.8,36.0,26.5,28.2,30.3,33.7,null],nj:[49.6,53.0,56.1,57.8,57.9,48.9,51.2,51.2,53.6,null]},
+ math:{kipp:[20.8,30.1,43.1,45.7,36.6,17.6,20.7,30.3,34.1,43],npS:[18.8,21.6,26.1,26.0,27.2,12.7,15.1,17.4,20.8,null],nj:[39.0,43.3,43.8,45.4,45.1,34.5,37.0,38.6,41.0,null]} };
+const COLORS = {ktaf:"var(--s1)", nyc:"var(--s2)", norcal:"var(--s3)", nola:"var(--s4)", miami:"var(--s5)", o:"var(--neutral)"};
+/* ---------- helpers ---------- */
+const NS="http://www.w3.org/2000/svg";
+function el(t,a,parent){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(parent)parent.appendChild(e);return e;}
+const tt=document.getElementById('tt');
+function hover(node,html){node.style.cursor="default";
+ node.addEventListener('mousemove',ev=>{tt.innerHTML=html;tt.style.opacity=1;tt.style.left=(ev.clientX+14)+'px';tt.style.top=(ev.clientY-10)+'px';});
+ node.addEventListener('mouseleave',()=>tt.style.opacity=0);}
+function table(id, headers, rows){
+ const d=document.getElementById(id);let h='<table><tr>'+headers.map(x=>`<th>${x}</th>`).join('')+'</tr>';
+ rows.forEach(r=>h+='<tr>'+r.map(x=>`<td>${x==null?'—':x}</td>`).join('')+'</tr>');d.innerHTML=h+'</table>';}
+/* ---------- leaderboard (horizontal bars) ---------- */
+(function(){
+ const W=980, rowH=26, left=170, right=60, H=LEADER.length*rowH+30;
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%'},document.getElementById('c_leader'));
+ const max=100, x=v=>left+(W-left-right)*v/max;
+ [0,25,50,75,100].forEach(v=>{el('line',{x1:x(v),x2:x(v),y1:6,y2:H-24,stroke:'var(--grid)','stroke-width':1},svg);
+  const t=el('text',{x:x(v),y:H-8,'text-anchor':'middle','font-size':11,fill:'var(--ink-3)'},svg);t.textContent=v;});
+ // network mean
+ el('line',{x1:x(59),x2:x(59),y1:6,y2:H-24,stroke:'var(--baseline)','stroke-dasharray':'4 3','stroke-width':1.5},svg);
+ const nm=el('text',{x:x(59)+4,y:16,'font-size':11,fill:'var(--ink-2)'},svg);nm.textContent='network 59.0';
+ LEADER.forEach((d,i)=>{const y=24+i*rowH, hgt=14;
+  const lab=el('text',{x:left-8,y:y+11,'text-anchor':'end','font-size':12,fill:d[3]==='o'?'var(--ink-3)':'var(--ink-1)','font-weight':d[3]==='o'?400:600},svg);
+  lab.textContent=d[0];
+  const r=el('rect',{x:x(0),y:y,width:Math.max(2,x(d[1])-x(0)),height:hgt,rx:4,fill:COLORS[d[3]]},svg);
+  hover(r,`<strong>${d[0]}</strong><br>SSM ${d[1]} · SGP ${d[2]}`);
+  if(d[3]!=='o'||i===0){const v=el('text',{x:x(d[1])+6,y:y+11,'font-size':11.5,'font-weight':600,fill:'var(--ink-1)'},svg);v.textContent=d[1];}});
+})();
+table('t_leader',['CMO','SSM 24-25 (weighted)','SGP 24-25'],LEADER.map(d=>[d[0],d[1],d[2]]));
+/* ---------- scatter ---------- */
+(function(){
+ const W=980,H=440,m={l:56,r:24,t:16,b:44};
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%'},document.getElementById('c_scatter'));
+ const x=v=>m.l+(W-m.l-m.r)*v/100, y=v=>H-m.b-(H-m.t-m.b)*(v-25)/65;
+ [0,25,50,75,100].forEach(v=>{el('line',{x1:x(v),x2:x(v),y1:m.t,y2:H-m.b,stroke:'var(--grid)'},svg);
+  const t=el('text',{x:x(v),y:H-m.b+18,'text-anchor':'middle','font-size':11,fill:'var(--ink-3)'},svg);t.textContent=v;});
+ [30,50,70,90].forEach(v=>{el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:'var(--grid)'},svg);
+  const t=el('text',{x:m.l-8,y:y(v)+4,'text-anchor':'end','font-size':11,fill:'var(--ink-3)'},svg);t.textContent=v;});
+ el('line',{x1:x(59),x2:x(59),y1:m.t,y2:H-m.b,stroke:'var(--baseline)','stroke-dasharray':'4 3'},svg);
+ el('line',{x1:m.l,x2:W-m.r,y1:y(55.1),y2:y(55.1),stroke:'var(--baseline)','stroke-dasharray':'4 3'},svg);
+ const xl=el('text',{x:(m.l+W-m.r)/2,y:H-6,'text-anchor':'middle','font-size':12,fill:'var(--ink-2)'},svg);xl.textContent='SSM (status) →';
+ const yl=el('text',{x:14,y:(m.t+H-m.b)/2,'font-size':12,fill:'var(--ink-2)',transform:`rotate(-90 14 ${(m.t+H-m.b)/2})`},svg);yl.textContent='SGP (growth) →';
+ LEADER.forEach(d=>{const hi=d[3]!=='o';
+  const c=el('circle',{cx:x(d[1]),cy:y(d[2]),r:hi?9:6,fill:COLORS[d[3]],stroke:'var(--surface-1)','stroke-width':2},svg);
+  hover(c,`<strong>${d[0]}</strong><br>SSM ${d[1]} · SGP ${d[2]}`);
+  if(hi){const t=el('text',{x:x(d[1])+12,y:y(d[2])+4,'font-size':12,'font-weight':600,fill:'var(--ink-1)'},svg);t.textContent=d[0].replace('KIPP ','');}});
+})();
+table('t_scatter',['CMO','SSM','SGP'],LEADER.map(d=>[d[0],d[1],d[2]]));
+/* ---------- SGP grouped bars ---------- */
+(function(){
+ const W=980,H=280,m={l:52,r:20,t:18,b:60};
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%'},document.getElementById('c_sgp'));
+ const y=v=>H-m.b-(H-m.t-m.b)*v/100;
+ [0,25,50,75,100].forEach(v=>{el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:v===0?'var(--baseline)':'var(--grid)'},svg);
+  const t=el('text',{x:m.l-8,y:y(v)+4,'text-anchor':'end','font-size':11,fill:'var(--ink-3)'},svg);t.textContent=v;});
+ el('line',{x1:m.l,x2:W-m.r,y1:y(50),y2:y(50),stroke:'var(--baseline)','stroke-dasharray':'4 3','stroke-width':1.5},svg);
+ const g50=el('text',{x:W-m.r-2,y:y(50)-6,'text-anchor':'end','font-size':11,fill:'var(--ink-2)'},svg);g50.textContent='50 = typical growth';
+ const groupW=(W-m.l-m.r)/SGP2.length;
+ SGP2.forEach((d,i)=>{const cx=m.l+groupW*i+groupW/2, bw=34;
+  const cls=d[3], col=COLORS[cls];
+  [[d[1],cx-bw-1,0.55],[d[2],cx+1,1]].forEach(([v,xx,op])=>{
+   const r=el('rect',{x:xx,y:y(v),width:bw,height:y(0)-y(v),rx:4,fill:col,opacity:op},svg);
+   hover(r,`<strong>${d[0]}</strong><br>${op<1?'2023-24':'2024-25'}: SGP ${v}`);
+   const t=el('text',{x:xx+bw/2,y:y(v)-5,'text-anchor':'middle','font-size':11,'font-weight':600,fill:'var(--ink-1)'},svg);t.textContent=v;});
+  const lb=el('text',{x:cx,y:H-m.b+18,'text-anchor':'middle','font-size':12,fill:'var(--ink-2)'},svg);lb.textContent=d[0];
+  const yr=el('text',{x:cx,y:H-m.b+34,'text-anchor':'middle','font-size':10.5,fill:'var(--ink-3)'},svg);yr.textContent='23-24 (pale) · 24-25';});
+})();
+table('t_sgp',['Region','SGP 2023-24','SGP 2024-25'],SGP2.map(d=>[d[0],d[1],d[2]]));
+/* ---------- NY drift line chart ---------- */
+(function(){
+ const W=980,H=360,m={l:52,r:150,t:20,b:40};
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%'},document.getElementById('c_nydrift'));
+ const yrs=NY.years, x=yr=>m.l+(W-m.l-m.r)*(yr-2013)/(2025-2013), y=v=>H-m.b-(H-m.t-m.b)*v/70;
+ // Manly band 2015-2023
+ el('rect',{x:x(2015),y:m.t,width:x(2023)-x(2015),height:H-m.t-m.b,fill:'var(--s2)',opacity:0.07},svg);
+ const bl=el('text',{x:(x(2015)+x(2023))/2,y:m.t+14,'text-anchor':'middle','font-size':11,fill:'var(--ink-3)'},svg);
+ bl.textContent='Manly superintendency, KIPP NYC (2015 – spring 2023)';
+ [0,20,40,60].forEach(v=>{el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:v===0?'var(--baseline)':'var(--grid)'},svg);
+  const t=el('text',{x:m.l-8,y:y(v)+4,'text-anchor':'end','font-size':11,fill:'var(--ink-3)'},svg);t.textContent=v+'%';});
+ yrs.filter(v=>v%2===1).forEach(v=>{const t=el('text',{x:x(v),y:H-m.b+18,'text-anchor':'middle','font-size':11,fill:'var(--ink-3)'},svg);t.textContent=v;});
+ NY.breaks.forEach(([yr,label])=>{el('line',{x1:x(yr),x2:x(yr),y1:m.t,y2:H-m.b,stroke:'var(--ink-3)','stroke-dasharray':'2 3'},svg);
+  const t=el('text',{x:x(yr)+3,y:H-m.b-8,'font-size':10,fill:'var(--ink-3)',transform:`rotate(-90 ${x(yr)+3} ${H-m.b-8})`},svg);t.textContent=label;});
+ [['ela','var(--s1)','ELA',16],['math','var(--s2)','Math',-4]].forEach(([k,col,name,dy])=>{
+  let path='',prev=null;
+  yrs.forEach((yr,i)=>{const v=NY[k][i];if(v==null){prev=null;return;}
+   const seg=(prev==null?'M':(yr-prev>1&&prev>=2019?'M':'L'));path+=`${seg}${x(yr)},${y(v)} `;prev=yr;});
+  el('path',{d:path,fill:'none',stroke:col,'stroke-width':2,'stroke-linejoin':'round'},svg);
+  yrs.forEach((yr,i)=>{const v=NY[k][i];if(v==null)return;
+   const c=el('circle',{cx:x(yr),cy:y(v),r:4,fill:col,stroke:'var(--surface-1)','stroke-width':1.5},svg);
+   hover(c,`<strong>${yr} ${name}</strong><br>${v}% proficient statewide`);});
+  const last=NY[k][NY[k].length-1];
+  const t=el('text',{x:x(2025)+10,y:y(last)+dy,'font-size':12,'font-weight':600,fill:'var(--ink-1)'},svg);
+  t.textContent=`${name} ${last}%`;});
+ const note=el('text',{x:x(2020),y:y(10),'text-anchor':'middle','font-size':10.5,fill:'var(--ink-3)'},svg);
+ note.textContent='no tests 2020-21';
+})();
+table('t_nydrift',['Year','ELA %','Math %'],NY.years.map((yr,i)=>[yr,NY.ela[i],NY.math[i]]));
+/* ---------- gap chart ---------- */
+(function(){
+ const W=980,H=320,m={l:52,r:120,t:20,b:36};
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%'},document.getElementById('c_gap'));
+ const x=yr=>m.l+(W-m.l-m.r)*(yr-2015)/(2025-2015), y=v=>H-m.b-(H-m.t-m.b)*(v+8)/40;
+ [-5,0,10,20,30].forEach(v=>{el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:v===0?'var(--baseline)':'var(--grid)','stroke-width':v===0?1.5:1},svg);
+  const t=el('text',{x:m.l-8,y:y(v)+4,'text-anchor':'end','font-size':11,fill:'var(--ink-3)'},svg);t.textContent=(v>0?'+':'')+v;});
+ GAP.years.forEach(v=>{const t=el('text',{x:x(v),y:H-m.b+18,'text-anchor':'middle','font-size':11,fill:'var(--ink-3)'},svg);t.textContent="'"+String(v).slice(2);});
+ [['ela','var(--s1)','ELA gap'],['math','var(--s2)','Math gap']].forEach(([k,col,name])=>{
+  let path='';GAP.years.forEach((yr,i)=>{const v=GAP[k][i];
+   path+=`${i===0?'M':(yr-GAP.years[i-1]>1?'M':'L')}${x(yr)},${y(v)} `;});
+  el('path',{d:path,fill:'none',stroke:col,'stroke-width':2},svg);
+  GAP.years.forEach((yr,i)=>{const v=GAP[k][i];
+   const c=el('circle',{cx:x(yr),cy:y(v),r:4,fill:col,stroke:'var(--surface-1)','stroke-width':1.5},svg);
+   hover(c,`<strong>${yr}</strong> ${name}: ${v>0?'+':''}${v} pts${yr===2022&&k==='math'?'<br>(understated — Infinity suppressed)':''}`);});
+  const last=GAP[k][GAP[k].length-1];
+  const t=el('text',{x:x(2025)+10,y:y(last)+4,'font-size':12,'font-weight':600,fill:'var(--ink-1)'},svg);t.textContent=`${name} +${last}`;});
+})();
+table('t_gap',['Year','ELA gap (pp)','Math gap (pp)'],GAP.years.map((yr,i)=>[yr,GAP.ela[i],GAP.math[i]]));
+/* ---------- NAEP mapping dumbbell/bars ---------- */
+(function(){
+ const W=980,H=300,m={l:120,r:40,t:30,b:40};
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%'},document.getElementById('c_naepmap'));
+ const min=200,max=260;
+ const x=v=>m.l+(W-m.l-m.r)*(v-min)/(max-min);
+ const rows=NAEPMAP.rows, rowH=(H-m.t-m.b)/rows.length;
+ [[NAEPMAP.basic.m,'NAEP Basic (math 214)'],[NAEPMAP.prof.m,'NAEP Proficient (math 249)']].forEach(([v,lb])=>{
+  el('line',{x1:x(v),x2:x(v),y1:m.t-6,y2:H-m.b,stroke:'var(--ink-3)','stroke-dasharray':'3 3'},svg);
+  const t=el('text',{x:x(v),y:m.t-12,'text-anchor':'middle','font-size':10.5,fill:'var(--ink-3)'},svg);t.textContent=lb;});
+ rows.forEach((d,i)=>{const yy=m.t+rowH*i+rowH/2;
+  const lab=el('text',{x:m.l-12,y:yy+4,'text-anchor':'end','font-size':13,'font-weight':d[0]==='NJ'||d[0]==='NY'?700:400,fill:'var(--ink-1)'},svg);lab.textContent=d[0];
+  el('line',{x1:x(210),x2:x(255),y1:yy,y2:yy,stroke:'var(--grid)'},svg);
+  const cR=el('circle',{cx:x(d[1]),cy:yy,r:7,fill:'var(--s1)',stroke:'var(--surface-1)','stroke-width':2},svg);
+  hover(cR,`<strong>${d[0]}</strong> G4 reading cut ≈ NAEP ${d[1]}`);
+  const cM=el('circle',{cx:x(d[2]),cy:yy,r:7,fill:'var(--s2)',stroke:'var(--surface-1)','stroke-width':2},svg);
+  hover(cM,`<strong>${d[0]}</strong> G4 math cut ≈ NAEP ${d[2]}`);
+  const tv=el('text',{x:x(d[2])+12,y:yy+4,'font-size':11.5,'font-weight':600,fill:'var(--ink-1)'},svg);tv.textContent=d[2];});
+ const lg=document.createElement('div');lg.className='legend';
+ lg.innerHTML='<span class="it"><span class="sw" style="background:var(--s1)"></span>Reading cut</span><span class="it"><span class="sw" style="background:var(--s2)"></span>Math cut</span>';
+ document.getElementById('c_naepmap').prepend(lg);
+})();
+table('t_naepmap',['State','G4 reading cut (NAEP equiv.)','G4 math cut (NAEP equiv.)'],NAEPMAP.rows);
+/* ---------- NAEP trend bars ---------- */
+(function(){
+ const W=980,H=260,m={l:140,r:70,t:14,b:30};
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%'},document.getElementById('c_naeptrend'));
+ const min=-8,max=8, x=v=>m.l+(W-m.l-m.r)*(v-min)/(max-min);
+ const rowH=(H-m.t-m.b)/NAEPTREND.length;
+ [-8,-4,0,4,8].forEach(v=>{el('line',{x1:x(v),x2:x(v),y1:m.t,y2:H-m.b,stroke:v===0?'var(--baseline)':'var(--grid)','stroke-width':v===0?1.5:1},svg);
+  const t=el('text',{x:x(v),y:H-8,'text-anchor':'middle','font-size':11,fill:'var(--ink-3)'},svg);t.textContent=(v>0?'+':'')+v;});
+ NAEPTREND.forEach((d,i)=>{const yy=m.t+rowH*i+6, hgt=rowH-12;
+  const lab=el('text',{x:m.l-10,y:yy+hgt/2+4,'text-anchor':'end','font-size':12.5,'font-weight':d[0]==='Louisiana'?700:400,fill:'var(--ink-1)'},svg);lab.textContent=d[0];
+  const pos=d[1]>=0, col=d[0]==='Louisiana'?'var(--s4)':'var(--neutral)';
+  const r=el('rect',{x:pos?x(0):x(d[1]),y:yy,width:Math.abs(x(d[1])-x(0)),height:hgt,rx:4,fill:col},svg);
+  hover(r,`<strong>${d[0]}</strong><br>NAEP G4 reading, 2019→2024: ${d[1]>0?'+':''}${d[1]} pts`);
+  const t=el('text',{x:pos?x(d[1])+8:x(d[1])-8,y:yy+hgt/2+4,'text-anchor':pos?'start':'end','font-size':11.5,'font-weight':600,fill:'var(--ink-1)'},svg);
+  t.textContent=(d[1]>0?'+':'')+d[1];});
+})();
+table('t_naeptrend',['Jurisdiction','NAEP G4 reading Δ 2019→2024'],NAEPTREND);
+/* ---------- structure table ---------- */
+(function(){
+ const rows=[
+  ['Per-pupil resources','$35.8k (NYC, Census FY24); NY state highest in nation ($31.9k)','NJ high ($27.2k) but charters funded well below district','~$14-15k (LA)','CA mid (~$18k) with Bay-Area costs','FL lowest tier (~$12k)'],
+  ['Facilities','Free co-located DOE space or mandatory rental assistance','Self-funded','Self/board-funded','Self-funded, Bay Area real estate','Self-funded'],
+  ['Enrollment system','Own lottery; no upper-grade backfill requirement','Newark Enrolls + Camden unified (mandatory backfill)','OneApp/NCAP universal (mandatory backfill)','Own lottery (varies by district)','Open enrollment market'],
+  ['Share of city served','~1% of ~1M students','~12% of Newark; large Camden share','~12% of an all-charter city','Small share across 5+ districts','<1% of Miami-Dade'],
+  ['Teacher labor pool','Largest in nation (~75k+ DOE alone)','Regional; competing at 12% density','Small metro; statewide shortages','Severe cost-of-living squeeze','Large but lowest-funded'],
+  ['State test bar (NAEP-mapped, G4 math 2022)','236 — and re-baselined downward in 2023','249 = NAEP Proficient (hardest)','241','241','232']];
+ const hdr=['','KIPP NYC','KIPP NJ (KTAF)','KIPP New Orleans','KIPP NorCal','KIPP Miami (KTAF)'];
+ let h='<table style="border-collapse:collapse;width:100%;font-size:12.5px;">';
+ h+='<tr>'+hdr.map(x=>`<th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--grid);color:var(--ink-3);font-weight:600;">${x}</th>`).join('')+'</tr>';
+ rows.forEach(r=>{h+='<tr>'+r.map((x,i)=>`<td style="padding:6px 8px;border-bottom:1px solid var(--grid);${i===0?'color:var(--ink-2);font-weight:600;':''}">${x}</td>`).join('')+'</tr>';});
+ document.getElementById('t_structure').innerHTML=h+'</table>';
+})();
+/* ---------- Newark small multiples ---------- */
+(function(){
+ const host=document.getElementById('c_newark');
+ [['ELA','ela'],['Math','math']].forEach(([title,key])=>{
+  const div=document.createElement('div');host.appendChild(div);
+  const W=470,H=300,m={l:40,r:56,t:26,b:30};
+  const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%'},div);
+  const tl=el('text',{x:m.l,y:16,'font-size':13,'font-weight':600,fill:'var(--ink-1)'},svg);tl.textContent=title;
+  const x=yr=>m.l+(W-m.l-m.r)*(yr-2015)/(2026-2015), y=v=>H-m.b-(H-m.t-m.b)*v/62;
+  [0,20,40,60].forEach(v=>{el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:v===0?'var(--baseline)':'var(--grid)'},svg);
+   const t=el('text',{x:m.l-6,y:y(v)+4,'text-anchor':'end','font-size':10.5,fill:'var(--ink-3)'},svg);t.textContent=v;});
+  [2015,2019,2022,2026].forEach(v=>{const t=el('text',{x:x(v),y:H-m.b+16,'text-anchor':'middle','font-size':10.5,fill:'var(--ink-3)'},svg);t.textContent="'"+String(v).slice(2);});
+  const D=NEWARK[key];
+  [['kipp','var(--s1)','KIPP',3],['npS','var(--neutral)','Newark',2],['nj','var(--s3)','NJ',2]].forEach(([k,col,name,wd])=>{
+   let path='',prev=null;
+   NEWARK.years.forEach((yr,i)=>{const v=D[k][i];if(v==null){return;}
+    const dashed=(yr===2026);
+    path+=`${prev==null||yr-prev>1?'M':'L'}${x(yr)},${y(v)} `;prev=yr;});
+   el('path',{d:path,fill:'none',stroke:col,'stroke-width':wd,'stroke-linejoin':'round'},svg);
+   NEWARK.years.forEach((yr,i)=>{const v=D[k][i];if(v==null)return;
+    const c=el('circle',{cx:x(yr),cy:y(v),r:k==='kipp'?4:3,fill:col,stroke:'var(--surface-1)','stroke-width':1.5},svg);
+    hover(c,`<strong>${name} ${yr}</strong>: ${v}%${yr===2026?' (internal)':''}`);});
+   const lastIdx=D[k].map((v,i)=>v!=null?i:-1).filter(i=>i>=0).pop();
+   const t=el('text',{x:x(NEWARK.years[lastIdx])+8,y:y(D[k][lastIdx])+4,'font-size':11,'font-weight':600,fill:'var(--ink-1)'},svg);
+   t.textContent=`${name} ${D[k][lastIdx]}`;});
+  const st=el('text',{x:x(2026),y:m.t+4,'text-anchor':'middle','font-size':9.5,fill:'var(--ink-3)'},svg);st.textContent="'26 internal";
+ });
+})();
+table('t_newark',['Year','KIPP ELA','Newark ELA','NJ ELA','KIPP Math','Newark Math','NJ Math'],
+ NEWARK.years.map((yr,i)=>[yr,NEWARK.ela.kipp[i],NEWARK.ela.npS[i],NEWARK.ela.nj[i],NEWARK.math.kipp[i],NEWARK.math.npS[i],NEWARK.math.nj[i]]));
+/* ---------- within-city table ---------- */
+(function(){
+ const rows=[
+  ['Newark (NJSLA 2025)','KIPP Newark 44.6% ELA / 34.1% math','Newark district 33.7 / 20.8 — KIPP ahead in every tested year since 2015; CREDO: Newark charter gains among the largest ever measured (+7.5 mo reading, +9 mo math per year)'],
+  ['Camden (NJSLA 2025)','KIPP Camden 28.7% ELA / 26.2% math','Camden district 14.4 / 10.2 — roughly double the district'],
+  ['New Orleans (LEAP 2026)','KIPP NOLA ELA up at 4 of 5 EM schools; Douglass HS: A (90.4 SPS), math Mastery+ 17→45 in 2 yrs','State flat in 2026; every KIPP EM school recovered D→C since 2022; Orleans the only LA district on the state most-improved list 4 straight years (+19 ranking spots)'],
+  ['Bay Area (CAASPP 2025)','KIPP NorCal 51.8% ELA / 40.8% math','CA statewide 48.8 / 37.3; Oakland USD 33.7 / 26.9 — KIPP beats state & host districts'],
+  ['NYC (NY tests 2024-25)','KIPP NYC 2024: 55.2% ELA / 70.6% math','NYC charter sector avg 2024: 58.2 ELA / 66.3 math — KIPP NYC <em>below</em> the sector in ELA; Success Academy #1 in math among 700+ NY districts/networks (2025)']];
+ let h='<table style="border-collapse:collapse;width:100%;font-size:13px;">';
+ rows.forEach(r=>{h+=`<tr><td style="padding:8px 10px 8px 0;border-bottom:1px solid var(--grid);font-weight:600;white-space:nowrap;vertical-align:top;">${r[0]}</td><td style="padding:8px 10px;border-bottom:1px solid var(--grid);vertical-align:top;">${r[1]}</td><td style="padding:8px 0 8px 10px;border-bottom:1px solid var(--grid);color:var(--ink-2);vertical-align:top;">${r[2]}</td></tr>`;});
+ document.getElementById('t_withincity').innerHTML=h+'</table>';
+})();
+/* ---------- Louisiana growth ladder ---------- */
+(function(){
+ const DATA=[["Most-improved honor-roll threshold (2025)",2],["Most-improved honor-roll threshold (2026)",3],
+  ["Best district in the state, typical year",4],["Best ever observed (closed half its schools)",6]];
+ const GOALS=[[12.5,'Foundation goal: math +12.5'],[13.5,'Foundation goal: ELA +13.5']];
+ const W=980,H=260,m={l:340,r:40,t:14,b:30};
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%'},document.getElementById('c_ladder'));
+ const max=15, x=v=>m.l+(W-m.l-m.r)*v/max;
+ [0,5,10,15].forEach(v=>{el('line',{x1:x(v),x2:x(v),y1:m.t,y2:H-m.b,stroke:v===0?'var(--baseline)':'var(--grid)','stroke-width':v===0?1.5:1},svg);
+  const t=el('text',{x:x(v),y:H-8,'text-anchor':'middle','font-size':11,fill:'var(--ink-3)'},svg);t.textContent='+'+v;});
+ const rowH=(H-m.t-m.b)/DATA.length;
+ DATA.forEach((d,i)=>{const yy=m.t+rowH*i+7, hgt=rowH-14;
+  const lab=el('text',{x:m.l-10,y:yy+hgt/2+4,'text-anchor':'end','font-size':12,fill:'var(--ink-1)'},svg);lab.textContent=d[0];
+  const r=el('rect',{x:x(0),y:yy,width:x(d[1])-x(0),height:hgt,rx:4,fill:'var(--s4)'},svg);
+  hover(r,`<strong>${d[0]}</strong><br>+${d[1]} points, grades 3-8`);
+  const t=el('text',{x:x(d[1])+8,y:yy+hgt/2+4,'font-size':11.5,'font-weight':600,fill:'var(--ink-1)'},svg);t.textContent='+'+d[1];});
+ GOALS.forEach(([v,lb],i)=>{el('line',{x1:x(v),x2:x(v),y1:m.t,y2:H-m.b,stroke:'var(--s2)','stroke-dasharray':'5 4','stroke-width':2},svg);
+  const t=el('text',{x:x(v)-6,y:m.t+14+i*16,'text-anchor':'end','font-size':11,'font-weight':600,fill:'var(--ink-1)'},svg);t.textContent=lb;});
+})();
+table('t_ladder',['Benchmark','Annual growth (pp, grades 3-8)'],
+ [["Most-improved honor-roll threshold (2025)","+2"],["Most-improved honor-roll threshold (2026)","+3"],
+  ["Best district, typical year","+4"],["Best ever (district closed 2 of 4 schools)","+6"],
+  ["Foundation regional goal — math","+12.5"],["Foundation regional goal — ELA","+13.5"],
+  ["Districts of 72 meeting the goal, either subject","0"],["Schools statewide meeting both goals","4 (~0.3%)"]]);
+</script>
+</body>
+</html>
