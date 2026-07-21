@@ -251,7 +251,7 @@
   <h2>Long-run trajectories: the regions are on their strongest run in years</h2>
   <div class="card">
     <h3>KIPP Newark (TEAM Academy) vs. Newark Public Schools vs. New Jersey — a decade of NJSLA/PARCC</h3>
-    <p class="note">Grades 3-8, % meeting/exceeding expectations, on the nation's most demanding proficiency bar. 2026 KIPP figures are internal (state files not yet public). No tests 2020-21.</p>
+    <p class="note">Grades 3-8, % meeting/exceeding expectations, on the nation's most demanding proficiency bar. No tests 2020-21.</p>
     <div class="legend">
       <span class="it"><span class="sw" style="background:var(--s1)"></span>KIPP Newark</span>
       <span class="it"><span class="sw" style="background:var(--neutral)"></span>Newark district</span>
@@ -261,8 +261,8 @@
     <details class="tbl"><summary>Data table</summary><div id="t_newark"></div></details>
   </div>
   <div class="tiles">
-    <div class="tile"><div class="v up">+18 pp</div><div class="l">KIPP Newark math, 2022→2026</div>
-      <div class="d">17.6% → 25 → 30 → 34 → 43% (internal 2026) — closing on the NJ statewide average on the state with the highest bar in the country, with a student body ~3× poorer.</div></div>
+    <div class="tile"><div class="v up">+16.5 pp</div><div class="l">KIPP Newark math, 2022→2025</div>
+      <div class="d">17.6% → 20.7 → 30.3 → 34.1% — nearly doubled since the COVID trough, on the state with the highest proficiency bar in the country, with a student body ~3× poorer than the state average.</div></div>
     <div class="tile"><div class="v up">+16 pp</div><div class="l">KIPP Camden math, 2022→2025</div>
       <div class="d">9.9% → 26.2% — roughly 2.5× the Camden district rate, in one of the nation's poorest cities.</div></div>
     <div class="tile"><div class="v up">D → C → A</div><div class="l">KIPP New Orleans letter grades</div>
@@ -337,7 +337,7 @@
   standards-gap analysis; NYC IBO education spending report (2025); U.S. Census school-finance survey;
   KIPP Foundation and KIPP NYC published results pages; CREDO city studies (Newark, Camden, New Orleans);
   Education Recovery Scorecard. Full citation list in the accompanying written brief.
-  <div class="srcs">Internal figures (KIPP Newark 2026, region SSM corrections incl. Miami, and the Louisiana base-rate
+  <div class="srcs">Internal figures (region SSM corrections incl. Miami, and the Louisiana base-rate
   analysis of Foundation growth goals) are marked where used.
   2026 NAEP state results are expected in early 2027 and will be the next independent check.</div>
 </div>
@@ -368,9 +368,9 @@ const NAEPMAP = { // grade 4, 2022 mapping; [state, reading cut, math cut]
  rows:[["NJ",229,249],["LA",220,241],["CA",224,241],["NY",227,236],["FL",221,232]],
  basic:{r:208,m:214}, prof:{r:238,m:249} };
 const NAEPTREND = [["Louisiana",6.1],["California",-4.8],["New York",-5.0],["Nation (public)",-5.1],["New Jersey",-5.6],["Florida",-6.5]];
-const NEWARK = { years:[2015,2016,2017,2018,2019,2022,2023,2024,2025,2026],
- ela:{kipp:[31.4,39.9,46.6,54.4,51.6,34.4,38.8,38.5,44.6,50],npS:[22.2,28.9,32.5,34.8,36.0,26.5,28.2,30.3,33.7,null],nj:[49.6,53.0,56.1,57.8,57.9,48.9,51.2,51.2,53.6,null]},
- math:{kipp:[20.8,30.1,43.1,45.7,36.6,17.6,20.7,30.3,34.1,43],npS:[18.8,21.6,26.1,26.0,27.2,12.7,15.1,17.4,20.8,null],nj:[39.0,43.3,43.8,45.4,45.1,34.5,37.0,38.6,41.0,null]} };
+const NEWARK = { years:[2015,2016,2017,2018,2019,2022,2023,2024,2025],
+ ela:{kipp:[31.4,39.9,46.6,54.4,51.6,34.4,38.8,38.5,44.6],npS:[22.2,28.9,32.5,34.8,36.0,26.5,28.2,30.3,33.7],nj:[49.6,53.0,56.1,57.8,57.9,48.9,51.2,51.2,53.6]},
+ math:{kipp:[20.8,30.1,43.1,45.7,36.6,17.6,20.7,30.3,34.1],npS:[18.8,21.6,26.1,26.0,27.2,12.7,15.1,17.4,20.8],nj:[39.0,43.3,43.8,45.4,45.1,34.5,37.0,38.6,41.0]} };
 const COLORS = {ktaf:"var(--s1)", nyc:"var(--s2)", norcal:"var(--s3)", nola:"var(--s4)", miami:"var(--s5)", o:"var(--neutral)"};
 /* ---------- helpers ---------- */
 const NS="http://www.w3.org/2000/svg";
@@ -550,24 +550,22 @@ table('t_naeptrend',['Jurisdiction','NAEP G4 reading Δ 2019→2024'],NAEPTREND)
   const W=470,H=300,m={l:40,r:56,t:26,b:30};
   const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%'},div);
   const tl=el('text',{x:m.l,y:16,'font-size':13,'font-weight':600,fill:'var(--ink-1)'},svg);tl.textContent=title;
-  const x=yr=>m.l+(W-m.l-m.r)*(yr-2015)/(2026-2015), y=v=>H-m.b-(H-m.t-m.b)*v/62;
+  const x=yr=>m.l+(W-m.l-m.r)*(yr-2015)/(2025-2015), y=v=>H-m.b-(H-m.t-m.b)*v/62;
   [0,20,40,60].forEach(v=>{el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:v===0?'var(--baseline)':'var(--grid)'},svg);
    const t=el('text',{x:m.l-6,y:y(v)+4,'text-anchor':'end','font-size':10.5,fill:'var(--ink-3)'},svg);t.textContent=v;});
-  [2015,2019,2022,2026].forEach(v=>{const t=el('text',{x:x(v),y:H-m.b+16,'text-anchor':'middle','font-size':10.5,fill:'var(--ink-3)'},svg);t.textContent="'"+String(v).slice(2);});
+  [2015,2019,2022,2025].forEach(v=>{const t=el('text',{x:x(v),y:H-m.b+16,'text-anchor':'middle','font-size':10.5,fill:'var(--ink-3)'},svg);t.textContent="'"+String(v).slice(2);});
   const D=NEWARK[key];
   [['kipp','var(--s1)','KIPP',3],['npS','var(--neutral)','Newark',2],['nj','var(--s3)','NJ',2]].forEach(([k,col,name,wd])=>{
    let path='',prev=null;
    NEWARK.years.forEach((yr,i)=>{const v=D[k][i];if(v==null){return;}
-    const dashed=(yr===2026);
     path+=`${prev==null||yr-prev>1?'M':'L'}${x(yr)},${y(v)} `;prev=yr;});
    el('path',{d:path,fill:'none',stroke:col,'stroke-width':wd,'stroke-linejoin':'round'},svg);
    NEWARK.years.forEach((yr,i)=>{const v=D[k][i];if(v==null)return;
     const c=el('circle',{cx:x(yr),cy:y(v),r:k==='kipp'?4:3,fill:col,stroke:'var(--surface-1)','stroke-width':1.5},svg);
-    hover(c,`<strong>${name} ${yr}</strong>: ${v}%${yr===2026?' (internal)':''}`);});
+    hover(c,`<strong>${name} ${yr}</strong>: ${v}%`);});
    const lastIdx=D[k].map((v,i)=>v!=null?i:-1).filter(i=>i>=0).pop();
    const t=el('text',{x:x(NEWARK.years[lastIdx])+8,y:y(D[k][lastIdx])+4,'font-size':11,'font-weight':600,fill:'var(--ink-1)'},svg);
    t.textContent=`${name} ${D[k][lastIdx]}`;});
-  const st=el('text',{x:x(2026),y:m.t+4,'text-anchor':'middle','font-size':9.5,fill:'var(--ink-3)'},svg);st.textContent="'26 internal";
  });
 })();
 table('t_newark',['Year','KIPP ELA','Newark ELA','NJ ELA','KIPP Math','Newark Math','NJ Math'],

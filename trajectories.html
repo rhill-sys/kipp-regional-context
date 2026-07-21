@@ -102,8 +102,8 @@
 
 <div class="foot">
   <strong>Sources.</strong> Newark &amp; Camden: NJ DOE statewide assessment files (PARCC/NJSLA, grades 3-8, % Level 4+5),
-  2015–2025; TEAM Academy = KIPP Newark; KIPP Cooper Norcross = KIPP Camden (2016 partial: grades 5-8); Newark 2026
-  figures internal — state files not yet public. NYC: NYSED researcher files / NYC InfoHub (grades 3-8, L3+4; KIPP NYC
+  2015–2025; TEAM Academy = KIPP Newark; KIPP Cooper Norcross = KIPP Camden (2016 partial: grades 5-8).
+  NYC: NYSED researcher files / NYC InfoHub (grades 3-8, L3+4; KIPP NYC
   student-weighted across schools; NYSED declared results non-comparable across the 2016, 2018, and 2023 test changes;
   KIPP NYC 2022 math understated — KIPP Infinity suppressed in the state file). Miami: FLDOE results files 2021–2026
   (FSA through 2022, FAST PM3 from 2023; KIPP Miami all-grades aggregate; Miami-Dade district = enrollment-weighted
@@ -142,18 +142,18 @@ const IMPROVE=[
 ];
 
 const REGIONS=[
- {id:'newark', name:'KIPP Newark (TEAM)', col:'var(--s1)', dom:[2015,2026],
+ {id:'newark', name:'KIPP Newark (TEAM)', col:'var(--s1)', dom:[2015,2025],
   district:'Newark Public Schools', state:'New Jersey',
-  note:'The NJSLA/PARCC scale is unchanged across this window — no recalibrations — and NJ’s proficiency bar is the hardest in the country (grade-4 math cut = NAEP Proficient). 2026 KIPP figures are internal (open markers); district/state 2026 not yet published.',
-  chips:['<b>Above the district in every tested year since 2015</b>','ELA 2025: <b>+10.9 pp</b> over district','Math 2025: <b>+13.3 pp</b> over district','2026 (internal): <b>50 ELA / 43 math</b> — all-time highs, closing on the NJ state average'],
-  ela:{kipp:{2015:31.4,2016:39.9,2017:46.6,2018:54.4,2019:51.6,2022:34.4,2023:38.8,2024:38.5,2025:44.6,2026:50},
+  note:'The NJSLA/PARCC scale is unchanged across this window — no recalibrations — and NJ’s proficiency bar is the hardest in the country (grade-4 math cut = NAEP Proficient).',
+  chips:['<b>Above the district in every tested year since 2015</b>','ELA 2025: <b>+10.9 pp</b> over district','Math 2025: <b>+13.3 pp</b> over district','Math 2022→2025: <b>17.6 → 34.1</b> — nearly doubled since the COVID trough'],
+  ela:{kipp:{2015:31.4,2016:39.9,2017:46.6,2018:54.4,2019:51.6,2022:34.4,2023:38.8,2024:38.5,2025:44.6},
        dist:{2015:22.2,2016:28.9,2017:32.5,2018:34.8,2019:36.0,2022:26.5,2023:28.2,2024:30.3,2025:33.7},
        state:{2015:49.6,2016:53.0,2017:56.1,2018:57.8,2019:57.9,2022:48.9,2023:51.2,2024:51.2,2025:53.6}},
-  math:{kipp:{2015:20.8,2016:30.1,2017:43.1,2018:45.7,2019:36.6,2022:17.6,2023:20.7,2024:30.3,2025:34.1,2026:43},
+  math:{kipp:{2015:20.8,2016:30.1,2017:43.1,2018:45.7,2019:36.6,2022:17.6,2023:20.7,2024:30.3,2025:34.1},
        dist:{2015:18.8,2016:21.6,2017:26.1,2018:26.0,2019:27.2,2022:12.7,2023:15.1,2024:17.4,2025:20.8},
        state:{2015:39.0,2016:43.3,2017:43.8,2018:45.4,2019:45.1,2022:34.5,2023:37.0,2024:38.6,2025:41.0}},
-  internal:{ela:[2026],math:[2026]}},
- {id:'camden', name:'KIPP Camden (KCNA)', col:'var(--s3)', dom:[2015,2026],
+  internal:{ela:[],math:[]}},
+ {id:'camden', name:'KIPP Camden (KCNA)', col:'var(--s3)', dom:[2015,2025],
   district:'Camden City School District', state:'New Jersey',
   note:'Same unchanged NJ scale. KCNA’s first full administration was 2017 (2016 covered grades 5-8 only). Camden is one of the poorest cities in the United States.',
   chips:['ELA 2025: <b>28.7% vs district 14.4%</b> — 2.0×','Math 2025: <b>26.2% vs district 10.2%</b> — 2.6×','Math gap over district: <b>+2.7 pp (2022) → +16.0 pp (2025)</b>'],
